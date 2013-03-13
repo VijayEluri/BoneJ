@@ -1991,14 +1991,14 @@ public class ParticleCounter implements PlugIn, DialogListener {
 		particleLists.get(p).clear();
 	}
 
-	private void joinMappedStructures(ImagePlus imp, int[][] particleLabels,
-			int nParticles, int phase) {
+	private void joinMappedStructures(ImagePlus imp, final int[][] particleLabels,
+			int nParticles, final int phase) {
 		IJ.showStatus("Mapping structures and joining...");
 		final int w = imp.getWidth();
 		final int h = imp.getHeight();
 		final int d = imp.getImageStackSize();
 
-		ArrayList<HashSet<Integer>> map = new ArrayList<HashSet<Integer>>(
+		final ArrayList<HashSet<Integer>> map = new ArrayList<HashSet<Integer>>(
 				nParticles + 1);
 
 		int[] lut = new int[nParticles + 1];
@@ -2011,31 +2011,44 @@ public class ParticleCounter implements PlugIn, DialogListener {
 			set.add(root);
 			map.add(set);
 		}
-
+		final AtomicInteger ai = new AtomicInteger(0);
+		Thread[] threads = Multithreader.newThreads();
+		for (int thread = 0; thread < threads.length; thread++) {
+			threads[thread] = new Thread(new Runnable() {
+				public void run() {
+					int[] nbh = null;
+					if (phase == FORE)
+						nbh = new int[26];
+					else if (phase == BACK)
+						nbh = new int[6];
+					for (int z = ai.getAndIncrement(); z < d; z = ai.getAndIncrement()) {
+						IJ.showStatus("Building neighbourhood list");
+						IJ.showProgress(z, d - 1);
+						for (int y = 0; y < h; y++) {
+							final int yw = y * w;
+							for (int x = 0; x < w; x++) {
+								final int centre = particleLabels[z][yw + x];
+								// ignore background
+								if (centre == 0)
+									continue;
+								if (phase == FORE)
+									get26Neighborhood(nbh, particleLabels, x, y, z, w, h, d);
+								else if (phase == BACK)
+									get6Neighborhood(nbh, particleLabels, x, y, z, w, h, d);
+								addNeighboursToMap(map, nbh, centre);
+							}
+						}
+					}
+				}
+			});
+		}
+		Multithreader.startAndJoin(threads);
+					
 		// populate the first list with neighbourhoods
-		int[] nbh = null;
-		if (phase == FORE)
-			nbh = new int[26];
-		else if (phase == BACK)
-			nbh = new int[6];
+		
 		//could multithread here
 		for (int z = 0; z < d; z++) {
-			IJ.showStatus("Building neighbourhood list");
-			IJ.showProgress(z, d - 1);
-			for (int y = 0; y < h; y++) {
-				final int yw = y * w;
-				for (int x = 0; x < w; x++) {
-					final int centre = particleLabels[z][yw + x];
-					// ignore background
-					if (centre == 0)
-						continue;
-					if (phase == FORE)
-						get26Neighborhood(nbh, particleLabels, x, y, z, w, h, d);
-					else if (phase == BACK)
-						get6Neighborhood(nbh, particleLabels, x, y, z, w, h, d);
-					addNeighboursToMap(map, nbh, centre);
-				}
-			}
+			
 		}
 		// map now contains for every value the set of first degree neighbours
 
