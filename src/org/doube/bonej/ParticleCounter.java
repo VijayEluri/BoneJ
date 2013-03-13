@@ -23,10 +23,12 @@ import java.awt.Choice;
 import java.awt.TextField;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -2016,6 +2018,7 @@ public class ParticleCounter implements PlugIn, DialogListener {
 			nbh = new int[26];
 		else if (phase == BACK)
 			nbh = new int[6];
+		//could multithread here
 		for (int z = 0; z < d; z++) {
 			IJ.showStatus("Building neighbourhood list");
 			IJ.showProgress(z, d - 1);
@@ -2303,7 +2306,7 @@ public class ParticleCounter implements PlugIn, DialogListener {
 	 */
 	private void addNeighboursToMap(ArrayList<HashSet<Integer>> map, int[] nbh,
 			int centre) {
-		HashSet<Integer> set = map.get(centre);
+		Set <Integer> set = Collections.synchronizedSet(map.get(centre));
 		final int l = nbh.length;
 		for (int i = 0; i < l; i++) {
 			final int val = nbh[i];
