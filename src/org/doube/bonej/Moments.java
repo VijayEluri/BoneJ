@@ -151,8 +151,12 @@ public class Moments implements PlugIn, DialogListener {
 		ri.setResultInRow(imp, "I3 (kg.m²)", E.getD().get(0, 0));
 		ri.updateTable();
 
+		ImagePlus imp0 = new Duplicator().run(imp);
+	    IJ.setAutoThreshold(imp, "Default"); 
+	    IJ.run(imp0, "Convert to Mask", "");
+	    
 		if (doAlign)
-			alignToPrincipalAxes(imp, E.getV(), centroid, startSlice, endSlice,
+			alignToPrincipalAxes(imp0, imp, E.getV(), centroid, startSlice, endSlice,
 					min, max, doAxes).show();
 
 		if (doAxes3D)
@@ -410,17 +414,17 @@ public class Moments implements PlugIn, DialogListener {
 	 *            if true, draw axes on the aligned copy
 	 * @return ImagePlus copy of the input image
 	 */
-	public ImagePlus alignToPrincipalAxes(ImagePlus imp, Matrix E,
+	public ImagePlus alignToPrincipalAxes(ImagePlus imp0, ImagePlus imp,Matrix E,
 			double[] centroid, int startSlice, int endSlice, double min,
 			double max, boolean doAxes) {
 		final ImageStack sourceStack = imp.getImageStack();
-		Calibration cal = imp.getCalibration();
+		Calibration cal = imp0.getCalibration();
 		final double vW = cal.pixelWidth;
 		final double vH = cal.pixelHeight;
 		final double vD = cal.pixelDepth;
 		final double vS = Math.min(vW, Math.min(vH, vD));
 		final int d = sourceStack.getSize();
-		int[] sides = getRotatedSize(E, imp, centroid, startSlice, endSlice,
+		int[] sides = getRotatedSize(E, imp0, centroid, startSlice, endSlice,
 				min, max);
 
 		// Rotation matrix to rotate data 90 deg around x axis
@@ -638,6 +642,7 @@ public class Moments implements PlugIn, DialogListener {
 			final double eVI02 = eigenVecInv[0][2];
 			final double eVI12 = eigenVecInv[1][2];
 			final double eVI22 = eigenVecInv[2][2];
+						
 			for (int z = this.thread + 1; z <= this.dT; z += this.nThreads) {
 				IJ.showStatus("Aligning image stack...");
 				IJ.showProgress(z, this.dT);
@@ -808,12 +813,12 @@ public class Moments implements PlugIn, DialogListener {
 	 *            intercept of density equation, d = m * p + c
 	 * @return aligned ImagePlus
 	 */
-	public ImagePlus alignImage(ImagePlus imp, Matrix E, boolean doAxes,
+	public ImagePlus alignImage(ImagePlus imp0, ImagePlus imp, Matrix E, boolean doAxes,
 			int startSlice, int endSlice, double min, double max, double m,
 			double c) {
-		final double[] centroid = getCentroid3D(imp, startSlice, endSlice, min,
+		final double[] centroid = getCentroid3D(imp0, startSlice, endSlice, min,
 				max, m, c);
-		ImagePlus alignedImp = alignToPrincipalAxes(imp, E, centroid,
+		ImagePlus alignedImp = alignToPrincipalAxes(imp0, imp, E, centroid,
 				startSlice, endSlice, min, max, doAxes);
 		return alignedImp;
 	}

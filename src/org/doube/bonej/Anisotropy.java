@@ -23,17 +23,23 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.process.ImageProcessor;
 import ij.plugin.PlugIn;
+import ij.plugin.Duplicator;
 import ij.gui.*;
 import ij.macro.Interpreter;
 import ij.measure.Calibration;
 
+
+
+
 // for 3D plotting of coordinates
 import javax.vecmath.Point3f;
 import javax.vecmath.Color3f;
+
 import customnode.CustomPointMesh;
 
 import java.awt.AWTEvent;
 import java.awt.Checkbox;
+import java.awt.Image;
 import java.awt.TextField;
 import java.util.Enumeration;
 import java.util.List;
@@ -79,16 +85,16 @@ public class Anisotropy implements PlugIn, DialogListener {
 		if (!ImageCheck.checkEnvironment()) {
 			return;
 		}
-		final ImagePlus imp = IJ.getImage();
+		ImagePlus imp = IJ.getImage();
 		if (null == imp) {
 			IJ.noImage();
 			return;
 		}
 		ImageCheck ic = new ImageCheck();
-		if (!ic.isBinary(imp)) {
+		/** if (!ic.isBinary(imp)) {
 			IJ.error("8-bit binary (black and white only) image required.");
 			return;
-		}
+		} */
 		if (!ic.isMultiSlice(imp) || imp.getStackSize() < 5) {
 			IJ.error("Stack with at least 5 slices required");
 			return;
@@ -135,41 +141,59 @@ public class Anisotropy implements PlugIn, DialogListener {
 		final boolean doPlot = gd.getNextBoolean();
 		final boolean do3DResult = gd.getNextBoolean();
 		final boolean doAlign = gd.getNextBoolean();
+		
+		ImagePlus imp0 = new Duplicator().run(imp);
+	    IJ.setAutoThreshold(imp, "Default"); 
+	    IJ.run(imp0, "Convert to Mask", "");
+		/** ImagePlus impOrig = new ImagePlus("Orig_",imp.getImageStack());
+		ImagePlus impCopy = new ImagePlus("Copy_",imp0.getImageStack());
+		impOrig.show();
+		impCopy.show();*/
 
 		Object[] result = new Object[3];
 		if (doAutoMode && !doSingleSphere)
-			result = runToStableResult(imp, minSpheres, maxSpheres, nVectors,
+			result = runToStableResult(imp0, minSpheres, maxSpheres, nVectors,
 					radius, vectorSampling, tolerance, doPlot);
 		else if (doSingleSphere) {
 			double[] centroid = { w * vW / 2, h * vH / 2, d * vD / 2 };
 //			radius = Math.min(centroid[0], Math.min(centroid[1], centroid[2]));
-			result = calculateSingleSphere(imp, centroid, radius
+			result = calculateSingleSphere(imp0, centroid, radius
 					- vectorSampling * 2, vectorSampling, nVectors, false);
 		} else
-			result = runToStableResult(imp, minSpheres, minSpheres, nVectors,
+			result = runToStableResult(imp0, minSpheres, minSpheres, nVectors,
 					radius, vectorSampling, tolerance, doPlot);
 
 		double da = ((double[]) result[0])[0];
 		double[][] coOrdinates = (double[][]) result[1];
 
 		ResultInserter ri = ResultInserter.getInstance();
-		ri.setResultInRow(imp, "DA", da);
-		ri.setResultInRow(imp, "tDA", Math.pow(1 - da, -1));
+		ri.setResultInRow(imp0, "DA", da);
+		ri.setResultInRow(imp0, "tDA", Math.pow(1 - da, -1));
 		ri.updateTable();
 
 		if (do3DResult) {
 			plotPoints3D(coOrdinates, "Intercept Lengths");
 		}
-
+		
 		if (doAlign) {
 			EigenvalueDecomposition E = (EigenvalueDecomposition) result[2];
 			Moments m = new Moments();
-			ImagePlus alignedImp = m.alignImage(imp, E.getV(), false, 1, d,
+			ImagePlus alignedImp = m.alignImage(imp0, imp, E.getV(), false, 1, d,
 					128, 255, 0, 1);
 			alignedImp.show();
 		}
 		UsageReporter.reportEvent(this).send();
 		return;
+	}
+
+	private ij.ImagePlus ImagePlus(String string, ImageProcessor ip) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private ImagePlus ImagePlus(String string, Image image) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	/**
