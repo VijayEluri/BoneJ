@@ -39,7 +39,6 @@ import customnode.CustomPointMesh;
 
 import java.awt.AWTEvent;
 import java.awt.Checkbox;
-import java.awt.Image;
 import java.awt.TextField;
 import java.util.Enumeration;
 import java.util.List;
@@ -184,16 +183,6 @@ public class Anisotropy implements PlugIn, DialogListener {
 		}
 		UsageReporter.reportEvent(this).send();
 		return;
-	}
-
-	private ij.ImagePlus ImagePlus(String string, ImageProcessor ip) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	private ImagePlus ImagePlus(String string, Image image) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	/**
