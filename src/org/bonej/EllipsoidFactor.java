@@ -1613,6 +1613,47 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		return contactPoints;
 	}
 
+	/**
+	 * Return the 6 variables A - F of the standard ellipse formed by the
+	 * intersection of an ellipsoid and the xy plane at z, found simply by
+	 * substituting the value for z into the ellipsoid equation. Does not check
+	 * if the plane intersects the ellipsoid: use Ellipsoid.getZMinAndMax()
+	 * prior to calling this method.
+	 * 
+	 * <p>
+	 * <i>Ax</i><sup>2</sup> + <i>Bxy</i> + <i>Cy</i><sup>2</sup> + <i>Ex</i> +
+	 * <i>Fy</i> + <i>D</i> = 0
+	 * </p>
+	 * 
+	 * @param e
+	 *            Ellipsoid equation variables
+	 * @param z
+	 *            position of xy plane
+	 * @return 6 element double with variables in order A, B, C, E, F, D.
+	 */
+	private double[] getEllipseAtZ(double[] e, double z) {
+		final double a = e[0];
+		final double b = e[1];
+		final double c = e[2];
+		final double d = e[3];
+		final double f = e[4];
+		final double g = e[5];
+		final double h = e[6];
+		final double j = e[7];
+		final double k = e[8];
+
+		double A = a;
+		double B = d + d;
+		double C = b;
+		double E = 2 * (z * f + h);
+		double F = 2 * (z * g + j);
+		double D = z * (2 * k + c * z) - 1;
+
+		double[] ellipse = { A, B, C, E, F, D };
+
+		return ellipse;
+	}
+
 	private boolean isContained(Ellipsoid ellipsoid, byte[][] pixels,
 			final double pW, final double pH, final double pD, final int w,
 			final int h, final int d) {
