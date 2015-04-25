@@ -1620,9 +1620,9 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 	 * if the plane intersects the ellipsoid: use Ellipsoid.getZMinAndMax()
 	 * prior to calling this method.
 	 * 
-		 * <p>
-	 * <i>ax</i><sup>2</sup> + 2<i>bxy</i> +
-	 * <i>cy</i><sup>2</sup> + 2<i>dx</i> + 2<i>fy</i> + <i>g</i> = 0
+	 * <p>
+	 * <i>ax</i><sup>2</sup> + 2<i>bxy</i> + <i>cy</i><sup>2</sup> + 2<i>dx</i>
+	 * + 2<i>fy</i> + <i>g</i> = 0
 	 * </p>
 	 * 
 	 * @param e
@@ -1652,6 +1652,193 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		double[] ellipse = { a, b, c, d, f, g };
 
 		return ellipse;
+	}
+
+	private ArrayList<double[]> findEllipseContactPoints(double[] ellipse,
+			byte[][] pixels, double pW, double pH, double pD, int sw, int sh,
+			int sd) {
+
+		// translate ellipse to xy origin
+		final double a = ellipse[0];
+		final double b = ellipse[1];
+		final double c = ellipse[2];
+
+		// d and f are used to calculate the translated equation
+		final double d = ellipse[3];
+		final double f = ellipse[4];
+
+		final double b2ac = b * b - a * c;
+
+		// centroid of ellipse
+		final double x0 = (c * d - b * f) / b2ac;
+		final double y0 = (a * f - b * d) / b2ac;
+
+		final double g = a * x0 * x0 + 2 * b * x0 * y0 + c * y0 * y0 + 2 * d
+				* x0 + 2 * f * y0 + ellipse[5];
+
+		// use variable names same as Da Silva (1989)
+		//http://cs.brown.edu/research/pubs/theses/masters/1989/dasilva.pdf
+		final double A = a;
+		final double B = 2 * b; // da Silva uses the doubled formulation
+		final double C = c;
+		final double D = g;
+
+		final double A2 = A + A;
+		final double B2 = B + B;
+		final double C2 = C + C;
+		final double B_2 = B / 2;
+
+		final double k1 = -B / C2;
+		double Xv = Math.sqrt(-D / (A + B * k1 + C * k1 * k1));
+		if (Xv < 0)
+			Xv = -Xv;
+
+		final double Yv = k1 * Xv;
+
+		final double k2 = -B / A2;
+		double Yh = Math.sqrt(-D / A * k2 * k2 + B * k2 + C);
+		if (Yh < 0)
+			Yh = -Yh;
+		final double Xh = k2 * Yh;
+
+		final double k3 = (A2 - B) / (C2 - B);
+		final double Xr = Math.sqrt(-D / (A + B * k3 + C * k3 * k3));
+		double Yr = k3 * Xr;
+		if (Xr < Yr * k1)
+			Yr = -Yr;
+
+		final double k4 = (-A2 - B) / (C2 - B);
+		double Xl = Math.sqrt(-D / (A + B * k4 + C * k4 * k4));
+		final double Y1 = k4 * Xl;
+		if (Xl > Y1 * k1)
+			Xl = -Xl;
+
+		// this bit needs reworking to translate from real units to pixels
+		// perhaps leave in real units until later?
+		// int arithmetic about 3x faster than double
+		final int XV = (int) Math.round(Xv);
+		int YV = (int) Math.round(Yv);
+		final int YR = (int) Math.round(Yr);
+		final int XH = (int) Math.round(Xh);
+		final int XL = (int) Math.round(Xl);
+
+		// starting pixel
+		// TODO still in real units, not pixels!
+		int x = XV;
+		int y = YV;
+
+		double Xinit = x - 0.5;
+		double Yinit = y + 1;
+
+		double Fn = C2 * Yinit + B * Xinit + C;
+		double Fnw = Fn - A2 * Xinit - B * Yinit + A - B;
+		double d1 = (A * Xinit * Xinit) + (B * Xinit * Yinit)
+				+ (C * Yinit * Yinit) + D;
+
+		double Fn_n = C2;
+		double Fw_w = A2;
+		double Fs_s = C2;
+		double Fn_nw = C2 - B;
+		double Fnw_n = Fn_nw;
+		double Fw_nw = A2 - B;
+		double Fnw_w = Fw_nw;
+		double Fw_sw = A2 + B;
+		double Fsw_w = Fw_sw;
+		double Fnw_nw = A2 - B2 + C2;
+		double Fsw_sw = A2 + B2 + C2;
+		double Fs_sw = C2 + B;
+		double Fsw_s = Fs_sw;
+
+		final double cross1 = B - A;
+		final double cross2 = A - B + C;
+		final double cross3 = A + B + C;
+		final double cross4 = A + B;
+
+		ArrayList<double[]> ellipsePixels = new ArrayList<double[]>();
+
+		// region 1
+		while (y < Yr) {
+			double[] pixel = { x, y };
+			ellipsePixels.add(pixel);
+			y += 1;
+			if (d1 < 0 || Fn - Fnw < cross1) {
+				d1 += Fn;
+				Fn += Fn_n;
+				Fnw += Fnw_n;
+			} else {
+				x -= 1;
+				d1 += Fnw;
+				Fn += Fn_nw;
+				Fnw += Fnw_nw;
+			}
+		}
+
+		double Fw = Fnw - Fn + A + B + B_2;
+		Fnw += A - C;
+		double d2 = d1 + (Fw - Fn + C) / 2 + (A + C) / 4 - A;
+		
+		// region2
+		while (x > XH) {
+			double[] pixel = { x, y };
+			ellipsePixels.add(pixel);
+			x -= 1;
+			if (d2 < 0 || (Fnw - Fw < cross2)) {
+				y += 1;
+				d2 += Fnw;
+				Fw += Fw_nw;
+				Fnw += Fnw_nw;
+			} else {
+				d2 += Fw;
+				Fw += Fw_w;
+				Fnw += Fnw_w;
+			}
+		}
+
+		double d3 = d2 + Fw - Fnw + C2 - B;
+		Fw += B;
+		double Fsw = Fw - Fnw + Fw + C2 + C2 - B;
+
+		//region 3
+		while (x < XL){
+			double[] pixel = { x, y };
+			ellipsePixels.add(pixel);
+			x -= 1;
+			if (d3 < 0 || Fsw - Fw > cross3){
+				d3 += Fw;
+				Fw += Fw_w;
+				Fsw += Fsw_w;
+			} else {
+				y -= 1;
+				d3 += Fsw;
+				Fw += Fw_sw;
+				Fsw += Fsw_sw;
+			}
+		}
+		
+		double Fs = Fsw - Fw - B;
+		double d4 = d3 - Fsw/2 + Fs + A - (A+C-B)/4;
+		Fsw += C-A;
+		Fs += C - B_2;
+		YV = -YV;
+		
+		//region 4
+		while (y > YV){
+			double[] pixel = { x, y };
+			ellipsePixels.add(pixel);
+			y -= 1;
+			if (d4 < 0 || Fsw -Fs < cross4){
+				x -= 1;
+				d4 += Fsw;
+				Fs += Fs_sw;
+				Fsw += Fsw_sw;
+			} else {
+				d1 += Fs;
+				Fs += Fs_s;
+				Fsw += Fsw_s;
+			}
+		}
+		
+		return ellipsePixels;
 	}
 
 	private boolean isContained(Ellipsoid ellipsoid, byte[][] pixels,
