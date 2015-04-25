@@ -1614,42 +1614,42 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 	}
 
 	/**
-	 * Return the 6 variables A - F of the standard ellipse formed by the
+	 * Return the 6 variables a - g of the standard ellipse formed by the
 	 * intersection of an ellipsoid and the xy plane at z, found simply by
 	 * substituting the value for z into the ellipsoid equation. Does not check
 	 * if the plane intersects the ellipsoid: use Ellipsoid.getZMinAndMax()
 	 * prior to calling this method.
 	 * 
-	 * <p>
-	 * <i>Ax</i><sup>2</sup> + <i>Bxy</i> + <i>Cy</i><sup>2</sup> + <i>Ex</i> +
-	 * <i>Fy</i> + <i>D</i> = 0
+		 * <p>
+	 * <i>ax</i><sup>2</sup> + 2<i>bxy</i> +
+	 * <i>cy</i><sup>2</sup> + 2<i>dx</i> + 2<i>fy</i> + <i>g</i> = 0
 	 * </p>
 	 * 
 	 * @param e
 	 *            Ellipsoid equation variables
 	 * @param z
 	 *            position of xy plane
-	 * @return 6 element double with variables in order A, B, C, E, F, D.
+	 * @return 6 element double with variables in order a, b, c, d, f, g.
 	 */
 	private double[] getEllipseAtZ(double[] e, double z) {
-		final double a = e[0];
-		final double b = e[1];
-		final double c = e[2];
-		final double d = e[3];
-		final double f = e[4];
-		final double g = e[5];
-		final double h = e[6];
-		final double j = e[7];
-		final double k = e[8];
+		final double ea = e[0];
+		final double eb = e[1];
+		final double ec = e[2];
+		final double ed = e[3];
+		final double ef = e[4];
+		final double eg = e[5];
+		final double eh = e[6];
+		final double ej = e[7];
+		final double ek = e[8];
 
-		double A = a;
-		double B = d + d;
-		double C = b;
-		double E = 2 * (z * f + h);
-		double F = 2 * (z * g + j);
-		double D = z * (2 * k + c * z) - 1;
+		double a = ea;
+		double b = ed;
+		double c = eb;
+		double d = z * ef + eh;
+		double f = z * eg + ej;
+		double g = z * (2 * ek + ec * z) - 1;
 
-		double[] ellipse = { A, B, C, E, F, D };
+		double[] ellipse = { a, b, c, d, f, g };
 
 		return ellipse;
 	}
