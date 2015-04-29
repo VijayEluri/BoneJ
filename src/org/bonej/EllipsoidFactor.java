@@ -1677,7 +1677,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 				* x0 + 2 * f * y0 + ellipse[5];
 
 		// use variable names same as Da Silva (1989)
-		//http://cs.brown.edu/research/pubs/theses/masters/1989/dasilva.pdf
+		// http://cs.brown.edu/research/pubs/theses/masters/1989/dasilva.pdf
 		final double A = a;
 		final double B = 2 * b; // da Silva uses the doubled formulation
 		final double C = c;
@@ -1707,28 +1707,28 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		if (Xr < Yr * k1)
 			Yr = -Yr;
 
-		final double k4 = (-A2 - B) / (C2 - B);
+		final double k4 = (-A2 - B) / (C2 + B);
 		double Xl = Math.sqrt(-D / (A + B * k4 + C * k4 * k4));
-		final double Y1 = k4 * Xl;
-		if (Xl > Y1 * k1)
+		final double Yl = k4 * Xl;
+		if (Xl > Yl * k1)
 			Xl = -Xl;
 
-		// this bit needs reworking to translate from real units to pixels
-		// perhaps leave in real units until later?
-		// int arithmetic about 3x faster than double
-		final int XV = (int) Math.round(Xv);
-		int YV = (int) Math.round(Yv);
-		final int YR = (int) Math.round(Yr);
-		final int XH = (int) Math.round(Xh);
-		final int XL = (int) Math.round(Xl);
+		// original uses rounded variables due to integer pixel space
+		// here we will stay in real space until doing the pixel lookup
+		final double XV = Xv;
+		double YV = Yv;
+		final double YR = Yr;
+		final double XH = Xh;
+		final double XL = Xl;
 
-		// starting pixel
-		// TODO still in real units, not pixels!
-		int x = XV;
-		int y = YV;
+		// starting position
+		double x = XV;
+		double y = YV;
 
-		double Xinit = x - 0.5;
-		double Yinit = y + 1;
+		// increments need to be in terms of pixel depth and height
+		// because pixels are unlikely to have spacing of 1x1 real units
+		double Xinit = x - 0.5 * pW;
+		double Yinit = y + pH;
 
 		double Fn = C2 * Yinit + B * Xinit + C;
 		double Fnw = Fn - A2 * Xinit - B * Yinit + A - B;
@@ -1758,15 +1758,15 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 		// region 1
 		while (y < Yr) {
-			double[] pixel = { x, y };
+			double[] pixel = { x + x0, y + y0 };
 			ellipsePixels.add(pixel);
-			y += 1;
+			y += pH;
 			if (d1 < 0 || Fn - Fnw < cross1) {
 				d1 += Fn;
 				Fn += Fn_n;
 				Fnw += Fnw_n;
 			} else {
-				x -= 1;
+				x -= pW;
 				d1 += Fnw;
 				Fn += Fn_nw;
 				Fnw += Fnw_nw;
@@ -1776,14 +1776,14 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		double Fw = Fnw - Fn + A + B + B_2;
 		Fnw += A - C;
 		double d2 = d1 + (Fw - Fn + C) / 2 + (A + C) / 4 - A;
-		
+
 		// region2
 		while (x > XH) {
-			double[] pixel = { x, y };
+			double[] pixel = { x + x0, y + y0 };
 			ellipsePixels.add(pixel);
-			x -= 1;
+			x -= pW;
 			if (d2 < 0 || (Fnw - Fw < cross2)) {
-				y += 1;
+				y += pH;
 				d2 += Fnw;
 				Fw += Fw_nw;
 				Fnw += Fnw_nw;
@@ -1798,36 +1798,36 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		Fw += B;
 		double Fsw = Fw - Fnw + Fw + C2 + C2 - B;
 
-		//region 3
-		while (x < XL){
-			double[] pixel = { x, y };
+		// region 3
+		while (x < XL) {
+			double[] pixel = { x + x0, y + y0 };
 			ellipsePixels.add(pixel);
-			x -= 1;
-			if (d3 < 0 || Fsw - Fw > cross3){
+			x -= pW;
+			if (d3 < 0 || Fsw - Fw > cross3) {
 				d3 += Fw;
 				Fw += Fw_w;
 				Fsw += Fsw_w;
 			} else {
-				y -= 1;
+				y -= pH;
 				d3 += Fsw;
 				Fw += Fw_sw;
 				Fsw += Fsw_sw;
 			}
 		}
-		
+
 		double Fs = Fsw - Fw - B;
-		double d4 = d3 - Fsw/2 + Fs + A - (A+C-B)/4;
-		Fsw += C-A;
+		double d4 = d3 - Fsw / 2 + Fs + A - (A + C - B) / 4;
+		Fsw += C - A;
 		Fs += C - B_2;
 		YV = -YV;
-		
-		//region 4
-		while (y > YV){
-			double[] pixel = { x, y };
+
+		// region 4
+		while (y > YV) {
+			double[] pixel = { x + x0, y + y0 };
 			ellipsePixels.add(pixel);
-			y -= 1;
-			if (d4 < 0 || Fsw -Fs < cross4){
-				x -= 1;
+			y -= pH;
+			if (d4 < 0 || Fsw - Fs < cross4) {
+				x -= pW;
 				d4 += Fsw;
 				Fs += Fs_sw;
 				Fsw += Fsw_sw;
@@ -1837,6 +1837,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 				Fsw += Fsw_s;
 			}
 		}
+		double[] pixel = { x + x0, y + y0 };
+		ellipsePixels.add(pixel);
 		
 		return ellipsePixels;
 	}
