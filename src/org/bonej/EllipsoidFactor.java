@@ -1715,11 +1715,12 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 		// original uses rounded variables due to integer pixel space
 		// here we will stay in real space until doing the pixel lookup
-		final double XV = Xv;
-		double YV = Yv;
-		final double YR = Yr;
-		final double XH = Xh;
-		final double XL = Xl;
+		// but starting at an integer number of pixels * pixel width (or height)
+		final double XV = pW * Math.floor(Xv / pW);
+		double YV = pH * Math.floor(Yv / pH);
+		final double YR = pH * Math.floor(Yr / pH);
+		final double XH = pW * Math.floor(Xh / pW);
+		final double XL = pW * Math.floor(Xl / pW);
 
 		// starting position
 		double x = XV;
@@ -1727,8 +1728,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 		// increments need to be in terms of pixel depth and height
 		// because pixels are unlikely to have spacing of 1x1 real units
-		double Xinit = x - 0.5 * pW;
-		double Yinit = y + pH;
+		final double Xinit = x - 0.5 * pW;
+		final double Yinit = y + pH;
 
 		double Fn = C2 * Yinit + B * Xinit + C;
 		double Fnw = Fn - A2 * Xinit - B * Yinit + A - B;
@@ -1757,7 +1758,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		ArrayList<double[]> ellipsePixels = new ArrayList<double[]>();
 
 		// region 1
-		while (y < Yr) {
+		while (y < YR) {
 			double[] pixel = { x + x0, y + y0 };
 			ellipsePixels.add(pixel);
 			y += pH;
@@ -1839,7 +1840,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		}
 		double[] pixel = { x + x0, y + y0 };
 		ellipsePixels.add(pixel);
-		
+
 		return ellipsePixels;
 	}
 
