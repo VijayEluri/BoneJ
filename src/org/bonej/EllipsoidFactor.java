@@ -1781,6 +1781,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		while (y < YR) {
 			double[] pixel = { x + x0, y + y0 };
 			ellipsePixels.add(pixel);
+			double[] pixelOpp = { -x + x0, -y + y0 };
+			ellipsePixels.add(pixelOpp);
 			y += pH;
 			if (d1 < 0 || Fn - Fnw < cross1) {
 				d1 += Fn;
@@ -1802,6 +1804,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		while (x > XH) {
 			double[] pixel = { x + x0, y + y0 };
 			ellipsePixels.add(pixel);
+			double[] pixelOpp = { -x + x0, -y + y0 };
+			ellipsePixels.add(pixelOpp);
 			x -= pW;
 			if (d2 < 0 || (Fnw - Fw < cross2)) {
 				y += pH;
@@ -1823,6 +1827,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		while (x < XL) {
 			double[] pixel = { x + x0, y + y0 };
 			ellipsePixels.add(pixel);
+			double[] pixelOpp = { -x + x0, -y + y0 };
+			ellipsePixels.add(pixelOpp);
 			x -= pW;
 			if (d3 < 0 || Fsw - Fw > cross3) {
 				d3 += Fw;
@@ -1846,6 +1852,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		while (y > YV) {
 			double[] pixel = { x + x0, y + y0 };
 			ellipsePixels.add(pixel);
+			double[] pixelOpp = { -x + x0, -y + y0 };
+			ellipsePixels.add(pixelOpp);
 			y -= pH;
 			if (d4 < 0 || Fsw - Fs < cross4) {
 				x -= pW;
@@ -1860,6 +1868,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		}
 		double[] pixel = { x + x0, y + y0 };
 		ellipsePixels.add(pixel);
+		double[] pixelOpp = { -x + x0, -y + y0 };
+		ellipsePixels.add(pixelOpp);
 
 		return ellipsePixels;
 	}
