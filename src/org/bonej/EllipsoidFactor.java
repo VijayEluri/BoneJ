@@ -1223,6 +1223,25 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		aabb.add(new Point3f(b[1], b[2], b[5]));
 		aabb.add(new Point3f(b[1], b[3], b[5]));
 
+		// ellipses
+		double[] zLimits = ellipsoid.getZMinAndMax();
+		final double zMin = zLimits[0];
+		final double zMax = zLimits[1];
+		final double[] ellipsoidEquation = ellipsoid.getEquation();
+		List<Point3f> points3D = new ArrayList<Point3f>();
+
+		for (double z = zMin; z <= zMax; z += pD) {
+			double[] ellipse = getEllipseAtZ(ellipsoidEquation, z);
+			ArrayList<double[]> points = findEllipseContactPoints(ellipse,
+					pixels, pW, pH, pD, w, h, d);
+
+			for (double[] p : points) {
+				points3D.add(new Point3f((float) p[0], (float) p[1], (float) z));
+			}
+		}
+
+		CustomPointMesh ellipseMesh = new CustomPointMesh(points3D);
+
 		try {
 			universe.addCustomMesh(mesh, "Point cloud " + name).setLocked(true);
 			universe.addCustomMesh(contactPointMesh,
@@ -1231,6 +1250,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 					true);
 			universe.addLineMesh(aabb, new Color3f(1.0f, 0.0f, 0.0f),
 					"AABB of " + name, false).setLocked(true);
+			universe.addCustomMesh(ellipseMesh, "Ellipses of " + name).setLocked(true);
 
 		} catch (Exception e) {
 			IJ.log("Something went wrong adding meshes to 3D viewer:\n"
