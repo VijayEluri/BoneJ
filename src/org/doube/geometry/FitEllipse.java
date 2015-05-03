@@ -42,7 +42,8 @@ public class FitEllipse {
 	 *         </p>
 	 * 
 	 * @see <p>
-	 *      <a href="http://www.mathworks.co.uk/matlabcentral/fileexchange/22684-ellipse-fit-direct-method"
+	 *      <a href=
+	 *      "http://www.mathworks.co.uk/matlabcentral/fileexchange/22684-ellipse-fit-direct-method"
 	 *      >MATLAB script</a>
 	 *      </p>
 	 */
@@ -147,7 +148,8 @@ public class FitEllipse {
 	 * @param points
 	 * @return
 	 * @see <p>
-	 *      <a href="http://www.mathworks.co.uk/matlabcentral/fileexchange/22683-ellipse-fit-taubin-method"
+	 *      <a href=
+	 *      "http://www.mathworks.co.uk/matlabcentral/fileexchange/22683-ellipse-fit-taubin-method"
 	 *      >MATLAB script</a>
 	 *      </p>
 	 * @deprecated until eig(a,b) is implemented
@@ -365,23 +367,22 @@ public class FitEllipse {
 		final double f = ellipse[4] / 2;
 		final double g = ellipse[5];
 
+		final double b2ac = b * b - a * c;
+
 		// centre
-		final double cX = (c * d - b * f) / (b * b - a * c);
-		final double cY = (a * f - b * d) / (b * b - a * c);
+		final double cX = (c * d - b * f) / b2ac;
+		final double cY = (a * f - b * d) / b2ac;
 
 		// semiaxis length
 		final double af = 2 * (a * f * f + c * d * d + g * b * b - 2 * b * d
 				* f - a * c * g);
 
-		final double aL = Math
-				.sqrt((af)
-						/ ((b * b - a * c) * (Math.sqrt((a - c) * (a - c) + 4
-								* b * b) - (a + c))));
+		final double p = Math.sqrt((a - c) * (a - c) + 4 * b * b);
 
-		final double bL = Math
-				.sqrt((af)
-						/ ((b * b - a * c) * (-Math.sqrt((a - c) * (a - c) + 4
-								* b * b) - (a + c))));
+		final double aL = Math.sqrt(af / (b2ac * (p - (a + c))));
+
+		final double bL = Math.sqrt(af / (b2ac * (-p - (a + c))));
+		
 		double phi = 0;
 		if (b == 0) {
 			if (a <= c)
