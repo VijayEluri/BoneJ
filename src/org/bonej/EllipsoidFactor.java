@@ -62,11 +62,19 @@ import customnode.CustomPointMesh;
  * <p>
  * ImageJ plugin to describe the local geometry of a binary image in an
  * oblate/prolate spheroid space. Uses Skeletonize3D to generate a 3D skeleton,
- * the points of which are used as centres for star volumes. Local geometry is
- * determined by the ratio between the first and second eigenvalues and first
- * and third eigenvalues of each star volume.
+ * the points of which are used as centres for maximally inscribed ellipsoids.
+ * The ellipsoid factor (EF) is a method for the local determination of the rod-
+ * or plate-like nature of porous or spongy continua. EF at a point within a 3D
+ * structure is defined as the difference in axis ratios of the greatest
+ * ellipsoid that fits inside the structure and that contains the point of
+ * interest, and ranges from −1 for strongly oblate (discus-shaped) ellipsoids,
+ * to +1 for strongly prolate (javelin-shaped) ellipsoids. For an ellipsoid with
+ * axes a ≤ b ≤ c, EF = a/b − b/c.
  * </p>
  * 
+ * @see http://dx.doi.org/10.3389/fendo.2015.00015
+ *      "The ellipsoid factor for quantification of rods, plates, and intermediate forms in 3D geometries"
+ *      Frontiers in Endocrinology (2015)
  * @author Michael Doube
  * 
  */
@@ -93,7 +101,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 	 * diagonal length
 	 */
 	private double maxDrift = Math.sqrt(3);
-//	private ResultsTable rt;
+	// private ResultsTable rt;
 	private Image3DUniverse universe;
 
 	private double stackVolume;
@@ -244,8 +252,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 		// ResultInserter ri = ResultInserter.getInstance();
 		// ri.updateTable();
-//		if (IJ.debugMode)
-//			rt.show("Ellipsoid volumes");
+		// if (IJ.debugMode)
+		// rt.show("Ellipsoid volumes");
 		UsageReporter.reportEvent(this).send();
 		IJ.showStatus("Ellipsoid Factor completed");
 	}
@@ -1045,9 +1053,9 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 					px, py, pz, px + " " + py + " " + pz);
 
 			// add history to the ResultsTable
-//			for (int i = 0; i < volumeHistory.size(); i++) {
-//				rt.setValue("" + index, i, volumeHistory.get(i));
-//			}
+			// for (int i = 0; i < volumeHistory.size(); i++) {
+			// rt.setValue("" + index, i, volumeHistory.get(i));
+			// }
 		}
 
 		long stop = System.currentTimeMillis();
@@ -1215,6 +1223,25 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		aabb.add(new Point3f(b[1], b[2], b[5]));
 		aabb.add(new Point3f(b[1], b[3], b[5]));
 
+		// ellipses
+		double[] zLimits = ellipsoid.getZMinAndMax();
+		final double zMin = zLimits[0];
+		final double zMax = zLimits[1];
+		final double[] ellipsoidEquation = ellipsoid.getEquation();
+		List<Point3f> points3D = new ArrayList<Point3f>();
+
+		for (double z = zMin; z <= zMax; z += pD) {
+			double[] ellipse = getEllipseAtZ(ellipsoidEquation, z);
+			ArrayList<double[]> points = findEllipseContactPoints(ellipse,
+					pixels, pW, pH, pD, w, h, d);
+
+			for (double[] p : points) {
+				points3D.add(new Point3f((float) p[0], (float) p[1], (float) z));
+			}
+		}
+
+		CustomPointMesh ellipseMesh = new CustomPointMesh(points3D);
+
 		try {
 			universe.addCustomMesh(mesh, "Point cloud " + name).setLocked(true);
 			universe.addCustomMesh(contactPointMesh,
@@ -1223,6 +1250,10 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 					true);
 			universe.addLineMesh(aabb, new Color3f(1.0f, 0.0f, 0.0f),
 					"AABB of " + name, false).setLocked(true);
+			universe.addCustomMesh(ellipseMesh, "Ellipses of " + name)
+					.setLocked(true);
+			universe.addLineMesh(points3D, new Color3f(1.0f, 1.0f, 0.0f),
+					"Ellipse regions of " + name, true).setLocked(true);
 
 		} catch (Exception e) {
 			IJ.log("Something went wrong adding meshes to 3D viewer:\n"
@@ -1604,6 +1635,376 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		}
 		return contactPoints;
 	}
+
+	/**
+	 * Return the 6 variables a - g of the standard ellipse formed by the
+	 * intersection of an ellipsoid and the xy plane at z, found simply by
+	 * substituting the value for z into the ellipsoid equation. Does not check
+	 * if the plane intersects the ellipsoid: use Ellipsoid.getZMinAndMax()
+	 * prior to calling this method.
+	 * 
+	 * <p>
+	 * <i>ax</i><sup>2</sup> + 2<i>bxy</i> + <i>cy</i><sup>2</sup> + 2<i>dx</i>
+	 * + 2<i>fy</i> + <i>g</i> = 0
+	 * </p>
+	 * 
+	 * @param e
+	 *            Ellipsoid equation variables
+	 * @param z
+	 *            position of xy plane
+	 * @return 6 element double with variables in order a, b, c, d, f, g.
+	 */
+	private double[] getEllipseAtZ(double[] e, double z) {
+		final double ea = e[0];
+		final double eb = e[1];
+		final double ec = e[2];
+		final double ed = e[3];
+		final double ef = e[4];
+		final double eg = e[5];
+		final double eh = e[6];
+		final double ej = e[7];
+		final double ek = e[8];
+
+		double a = ea;
+		double b = ed;
+		double c = eb;
+		double d = z * ef + eh;
+		double f = z * eg + ej;
+		double g = z * (2 * ek + ec * z) - 1;
+
+		double[] ellipse = { a, b, c, d, f, g };
+
+		return ellipse;
+	}
+
+	private ArrayList<double[]> findEllipseContactPoints(double[] ellipse,
+			byte[][] pixels, double pW, double pH, double pD, int sw, int sh,
+			int sd) {
+
+		// translate ellipse to xy origin
+		final double a = ellipse[0];
+		final double b = ellipse[1];
+		final double c = ellipse[2];
+
+		// d and f are used to calculate the translated equation
+		final double d = ellipse[3];
+		final double f = ellipse[4];
+		double g = ellipse[5];
+
+		final double b2ac = b * b - a * c;
+
+		final double x0 = (c * d - b * f) / b2ac;
+		final double y0 = (a * f - b * d) / b2ac;
+
+		// translate g (d and f = 0 and a, b , c stay the same)
+		g += a * x0 * x0 + 2 * b * x0 * y0 + c * y0 * y0 + 2 * d * x0 + 2 * f
+				* y0;
+
+		// following Bond 2002
+		// Ax2 + By2 + 2Cxy + F = 0
+		// final double A = a;
+		// final double B = c;
+		// final double C = b;
+		// final double F = g;
+		// final double xt = -C / Math.sqrt(A);
+		// final double yt = Math.sqrt(A);
+		// final double xtr = (B - C) / Math.sqrt(A + B - 2 * C);
+		// final double ytr = (A - C) / Math.sqrt(A + B + 2 * C);
+		// final double xr = Math.sqrt(B);
+		// final double yr = -C / Math.sqrt(B);
+		// final double xbr = (B + C) / Math.sqrt(A + B + 2 * C);
+		// final double ybr = -(A + C) / Math.sqrt(A + B + 2 * C);
+		// final double xb = C / Math.sqrt(A);
+		// final double yb = -Math.sqrt(A);
+		//
+		// ArrayList<double[]> ellipsePixels = new ArrayList<double[]>();
+		//
+		// ellipsePixels.add(new double[]{xt, yt});
+		// ellipsePixels.add(new double[]{xtr, ytr});
+		// ellipsePixels.add(new double[]{xr, yr});
+		// ellipsePixels.add(new double[]{xbr, ybr});
+		// ellipsePixels.add(new double[]{xb, yb});
+
+		// double x = xt;
+		// double y = yt;
+		//
+		// while (x < xtr) {
+		// double[] pixel = { x + x0, y + y0 };
+		// ellipsePixels.add(pixel);
+		// double[] pixelOpp = { -x + x0, -y + y0 };
+		// ellipsePixels.add(pixelOpp);
+		// double d1 = A * (x + pW) * (x + pW) + B * (y - 0.5 * pH)
+		// * (y - 0.5 * pH) + 2 * C * (x + pW) * (y - 0.5 * pH) + F;
+		// if (d1 <= 0)
+		// x += pW;
+		// else {
+		// x += pW;
+		// y -= pH;
+		// }
+		// }
+
+		// section 1
+		//
+		// double[] dim = FitEllipse.varToDimensions(new double[] { a, 2 * b, c,
+		// 2 * d, 2 * f, g });
+		// //
+		// IJ.log("dim[0] (x0) = " + dim[0] + ", x0 = " + x0 + "\n"
+		// + "dim[1] (y0) = " + dim[1] + ", y0 = " + y0 + "\n"
+		// + "dim[2] (a') = " + dim[2] + "\n" + "dim[3] (b') = " + dim[3]
+		// + "\n" + "dim[4] (theta) = " + dim[4]);
+		//
+		// final double semiMinor = dim[2] / 2;
+		// final double semiMajor = dim[3] / 2;
+		// final double theta = dim[4];
+
+		// final double acb2 = 4 * a * c - b * b;
+		//
+		// final double q = 64 * g * acb2 - 64
+		// * (a * f * f - b * d * f - c * d * d) / (acb2 * acb2);
+
+		// final double cFocus = Math.sqrt(Math.abs(q)
+		// * Math.sqrt(b * b + (a - c) * (a - c))) / 4;
+		//
+		// final double semiMajor = Math.sqrt(2 * Math.abs(q)
+		// * Math.sqrt(b * b + (a - c) * (a - c)) - 2 * q * (a + c)) / 8;
+
+		// final double aSq = semiMajor * semiMajor;
+
+		// final double semiMinor = Math.sqrt(aSq - cFocus * cFocus);
+
+		// final double cFocus = Math.sqrt(aSq - semiMinor * semiMinor);
+		// final double Xf = cFocus * Math.cos(theta);
+		// final double Yf = cFocus * Math.sin(theta);
+		// double XfSq = Xf * Xf;
+		// double YfSq = Yf * Yf;
+
+		//
+		// // use variable names same as Da Silva (1989)
+		// // http://cs.brown.edu/research/pubs/theses/masters/1989/dasilva.pdf
+		final double A = a;
+		final double B = b * 2; // da Silva uses the doubled formulation
+		final double C = c;
+		final double D = g;
+		//
+		// final double A = aSq - XfSq;
+		// final double B = -Xf * Yf;
+		// final double C = aSq - YfSq;
+		// final double D = -aSq * semiMinor * semiMinor;
+		//
+		final double A2 = A + A;
+		final double B2 = B + B;
+		final double C2 = C + C;
+		final double B_2 = B / 2;
+
+		final double k1 = -B / C2;
+		double Xv = Math.sqrt(-D / (A + B * k1 + C * k1 * k1));
+		if (Xv < 0)
+			Xv = -Xv;
+
+		final double Yv = k1 * Xv;
+
+		final double k2 = -B / A2;
+		double Yh = Math.sqrt(-D / (A * k2 * k2 + B * k2 + C));
+		if (Yh < 0)
+			Yh = -Yh;
+		final double Xh = k2 * Yh;
+
+		final double k3 = (A2 - B) / (C2 - B);
+		final double Xr = Math.sqrt(-D / (A + B * k3 + C * k3 * k3));
+		double Yr = k3 * Xr;
+		if (Xr < Yr * k1)
+			Yr = -Yr;
+
+		final double k4 = (-A2 - B) / (C2 + B);
+		double Xl = Math.sqrt(-D / (A + B * k4 + C * k4 * k4));
+		final double Yl = k4 * Xl;
+		if (Xl > Yl * k1)
+			Xl = -Xl;
+
+		ArrayList<double[]> ellipsePixels = new ArrayList<double[]>();
+
+		ellipsePixels.add(new double[] { Xv + x0, Yv + y0 }); // ok r8 - r1
+		ellipsePixels.add(new double[] { Xr + x0, Yr + y0 }); // ok r1 - r2
+		ellipsePixels.add(new double[] { Xh + x0, Yh + y0 }); // ok r2 - r3
+		ellipsePixels.add(new double[] { Xl + x0, -1 * Yl + y0 }); // ok r3 - r4
+		ellipsePixels.add(new double[] { -Xv + x0, -Yv + y0 }); // end of r4 is
+																// (-Xv, -Yv)
+		ellipsePixels.add(new double[] { -Xr + x0, -Yr + y0 });
+		ellipsePixels.add(new double[] { -Xh + x0, -Yh + y0 });
+		ellipsePixels.add(new double[] { -Xl + x0, -1 * -Yl + y0 });
+		ellipsePixels.add(new double[] { Xv + x0, Yv + y0 });
+
+		// original uses rounded variables due to integer pixel space
+		// here we will stay in real space until doing the pixel lookup
+		// but starting at an integer number of pixels * pixel width (or
+		// height)
+		final double XV = pW * Math.round(Xv / pW);
+		double YV = pH * Math.round(Yv / pH);
+		final double YR = pH * Math.round(Yr / pH);
+		final double XH = pW * Math.round(Xh / pW);
+		final double XL = pW * Math.round(Xl / pW);
+
+		// starting position
+		double x = XV;
+		double y = YV;
+
+		// increments need to be in terms of pixel depth and height
+		// because pixels are unlikely to have spacing of 1x1 real units
+		final double Xinit = x - 0.5 * pW;
+		final double Yinit = y + pH;
+
+		// double Fn = C2 * Yinit + B * Xinit + C;
+		// double Fnw = Fn - A2 * Xinit - B * Yinit + A - B;
+		// double d1 = (A * Xinit * Xinit) + (B * Xinit * Yinit)
+		// + (C * Yinit * Yinit);
+		//
+		// double Fn_n = C2;
+		// double Fw_w = A2;
+		// double Fs_s = C2;
+		// double Fn_nw = C2 - B;
+		// double Fnw_n = Fn_nw;
+		// double Fw_nw = A2 - B;
+		// double Fnw_w = Fw_nw;
+		// double Fw_sw = A2 + B;
+		// double Fsw_w = Fw_sw;
+		// double Fnw_nw = A2 - B2 + C2;
+		// double Fsw_sw = A2 + B2 + C2;
+		// double Fs_sw = C2 + B;
+		// double Fsw_s = Fs_sw;
+		//
+		// final double cross1 = B - A;
+		// final double cross2 = A - B + C;
+		// final double cross3 = A + B + C;
+		// final double cross4 = A + B;
+		//
+		// // ArrayList<double[]> ellipsePixels = new ArrayList<double[]>();
+		//
+		// // region 1
+		// IJ.log("region1");
+		// int ifCount = 0;
+		// int elseCount = 0;
+		// while (y < YR) {
+		// // double[] pixel = { x + x0, y + y0 };
+		// // ellipsePixels.add(pixel);
+		// // double[] pixelOpp = { -x + x0, -y + y0 };
+		// // ellipsePixels.add(pixelOpp);
+		// y += pH;
+		// if (d1 < 0 || (Fn - Fnw) < cross1) {
+		// ifCount++;
+		// d1 += Fn;
+		// Fn += Fn_n;
+		// Fnw += Fnw_n;
+		// } else {
+		// elseCount++;
+		// x -= pW;
+		// d1 += Fnw;
+		// Fn += Fn_nw;
+		// Fnw += Fnw_nw;
+		// }
+		// }
+		// IJ.log("ifCount = " + ifCount + ", elseCount = " + elseCount);
+		//
+		// double Fw = Fnw - Fn + A + B + B_2;
+		// Fnw += A - C;
+		// double d2 = d1 + (Fw - Fn + C) / 2 + (A + C) / 4 - A;
+		//
+		// // region2
+		// IJ.log("region2");
+		// ifCount = 0;
+		// elseCount = 0;
+		// while (x > XH) {
+		// // double[] pixel = { x + x0, y + y0 };
+		// // ellipsePixels.add(pixel);
+		// // double[] pixelOpp = { -x + x0, -y + y0 };
+		// // ellipsePixels.add(pixelOpp);
+		// x -= pW;
+		// if (d2 < 0 || (Fnw - Fw < cross2)) {
+		// ifCount++;
+		// y += pH;
+		// d2 += Fnw;
+		// Fw += Fw_nw;
+		// Fnw += Fnw_nw;
+		// } else {
+		// elseCount++;
+		// d2 += Fw;
+		// Fw += Fw_w;
+		// Fnw += Fnw_w;
+		// }
+		// }
+		// IJ.log("ifCount = " + ifCount + ", elseCount = " + elseCount);
+		//
+		// double d3 = d2 + Fw - Fnw + C2 - B;
+		// Fw += B;
+		// double Fsw = Fw - Fnw + Fw + C2 + C2 - B;
+		//
+		// // region 3
+		// IJ.log("region3");
+		// ifCount = 0;
+		// elseCount = 0;
+		// while (x < XL) {
+		// // double[] pixel = { x + x0, y + y0 };
+		// // ellipsePixels.add(pixel);
+		// // double[] pixelOpp = { -x + x0, -y + y0 };
+		// // ellipsePixels.add(pixelOpp);
+		// x -= pW;
+		// if (d3 < 0 || Fsw - Fw > cross3) {
+		// ifCount++;
+		// d3 += Fw;
+		// Fw += Fw_w;
+		// Fsw += Fsw_w;
+		// } else {
+		// elseCount++;
+		// y -= pH;
+		// d3 += Fsw;
+		// Fw += Fw_sw;
+		// Fsw += Fsw_sw;
+		// }
+		// }
+		// IJ.log("ifCount = " + ifCount + ", elseCount = " + elseCount);
+		//
+		// double Fs = Fsw - Fw - B;
+		// double d4 = d3 - Fsw / 2 + Fs + A - (A + C - B) / 4;
+		// Fsw += C - A;
+		// Fs += C - B_2;
+		// YV = -YV;
+		//
+		// // region 4
+		// IJ.log("region4");
+		// ifCount = 0;
+		// elseCount = 0;
+		// while (y > YV) {
+		// // double[] pixel = { x + x0, y + y0 };
+		// // ellipsePixels.add(pixel);
+		// // double[] pixelOpp = { -x + x0, -y + y0 };
+		// // ellipsePixels.add(pixelOpp);
+		// y -= pH;
+		// if (d4 < 0 || Fsw - Fs < cross4) {
+		// ifCount++;
+		// x -= pW;
+		// d4 += Fsw;
+		// Fs += Fs_sw;
+		// Fsw += Fsw_sw;
+		// } else {
+		// elseCount++;
+		// d1 += Fs;
+		// Fs += Fs_s;
+		// Fsw += Fsw_s;
+		// }
+		// }
+		// IJ.log("ifCount = " + ifCount + ", elseCount = " + elseCount);
+		// double[] pixel = { x + x0, y + y0 };
+		// ellipsePixels.add(pixel);
+		// double[] pixelOpp = { -x + x0, -y + y0 };
+		// ellipsePixels.add(pixelOpp);
+
+		return ellipsePixels;
+	}
+
+	// private double dist(double x1, double y1, double x2, double y2) {
+	// final double dx = x1 - x2;
+	// final double dy = y1 - y2;
+	// return Math.sqrt(dx * dx + dy * dy);
+	// }
 
 	private boolean isContained(Ellipsoid ellipsoid, byte[][] pixels,
 			final double pW, final double pH, final double pD, final int w,
