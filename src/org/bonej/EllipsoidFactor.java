@@ -112,7 +112,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 	private ResultsTable ellipseLog;
 
 	private ResultsTable ellipseScanLog;
-
 	public void run(String arg) {
 		if (!ImageCheck.checkEnvironment())
 			return;
