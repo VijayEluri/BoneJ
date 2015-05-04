@@ -1841,38 +1841,50 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		ellipseScanLog.addValue("k1", k1);
 		
 		double Xv = Math.sqrt(-D / (A + B * k1 + C * k1 * k1));
-		ellipseScanLog.addValue("Xv", Xv);
 		if (Xv < 0)
 			Xv = -Xv;
-
+		if (Double.isNaN(Xv))
+			Xv = 0;
 		final double Yv = k1 * Xv;
+		
+		ellipseScanLog.addValue("Xv", Xv);
 		ellipseScanLog.addValue("Yv", Yv);
 
 		final double k2 = -B / A2;
 		ellipseScanLog.addValue("k2", k2);
 		double Yh = Math.sqrt(-D / (A * k2 * k2 + B * k2 + C));
-		ellipseScanLog.addValue("Yh", Yh);
 		if (Yh < 0)
 			Yh = -Yh;
+		if (Double.isNaN(Yh))
+			Yh = 0;
 		final double Xh = k2 * Yh;
+		
 		ellipseScanLog.addValue("Xh", Xh);
-
+		ellipseScanLog.addValue("Yh", Yh);
+		
 		final double k3 = (A2 - B) / (C2 - B);
 		ellipseScanLog.addValue("k3", k3);
-		final double Xr = Math.sqrt(-D / (A + B * k3 + C * k3 * k3));
+		double Xr = Math.sqrt(-D / (A + B * k3 + C * k3 * k3));
+		if (Double.isNaN(Xr))
+			Xr = 0;
 		double Yr = k3 * Xr;
-		ellipseScanLog.addValue("Yr", Yr);
 		if (Xr < Yr * k1)
 			Yr = -Yr;
+		
+		ellipseScanLog.addValue("Xr", Xr);
+		ellipseScanLog.addValue("Yr", Yr);
 
 		final double k4 = (-A2 - B) / (C2 + B);
 		ellipseScanLog.addValue("k4", k4);
 		double Xl = Math.sqrt(-D / (A + B * k4 + C * k4 * k4));
-		ellipseScanLog.addValue("Xl", Xl);
+		if (Double.isNaN(Xl))
+			Xl = 0;
 		final double Yl = k4 * Xl;
-		ellipseScanLog.addValue("Yl", Yl);
 		if (Xl > Yl * k1)
 			Xl = -Xl;
+		
+		ellipseScanLog.addValue("Xl", Xl);
+		ellipseScanLog.addValue("Yl", Yl);
 
 		ellipseScanLog.show("Ellipse scan conversion");
 		
