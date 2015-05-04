@@ -38,6 +38,7 @@ import ij.process.ImageProcessor;
 import ij.gui.GenericDialog;
 import ij.gui.Plot;
 import ij.measure.Calibration;
+import ij.measure.ResultsTable;
 //import ij.measure.ResultsTable;
 import ij3d.Image3DUniverse;
 
@@ -105,6 +106,12 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 	private Image3DUniverse universe;
 
 	private double stackVolume;
+
+	private ResultsTable debugLog;
+
+	private ResultsTable ellipseLog;
+
+	private ResultsTable ellipseScanLog;
 
 	public void run(String arg) {
 		if (!ImageCheck.checkEnvironment())
@@ -182,6 +189,9 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		if (IJ.debugMode) {
 			universe = new Image3DUniverse();
 			universe.show();
+			debugLog = new ResultsTable();
+			ellipseLog = new ResultsTable();
+			ellipseScanLog = new ResultsTable();
 		}
 
 		long start = System.currentTimeMillis();
@@ -1227,12 +1237,37 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		double[] zLimits = ellipsoid.getZMinAndMax();
 		final double zMin = zLimits[0];
 		final double zMax = zLimits[1];
-		final double[] ellipsoidEquation = ellipsoid.getEquation();
+		final double[] eEq = ellipsoid.getEquation();
+
+		debugLog.incrementCounter();
+		debugLog.addLabel(name);
+		debugLog.addValue("x²", eEq[0]);
+		debugLog.addValue("y²", eEq[1]);
+		debugLog.addValue("z²", eEq[2]);
+		debugLog.addValue("2xy", eEq[3]);
+		debugLog.addValue("2xz", eEq[4]);
+		debugLog.addValue("2yz", eEq[5]);
+		debugLog.addValue("2x", eEq[6]);
+		debugLog.addValue("2y", eEq[7]);
+		debugLog.addValue("2z", eEq[8]);
+		debugLog.show("Ellipsoid equations");
+		
 		List<Point3f> points3D = new ArrayList<Point3f>();
 
-		for (double z = zMin; z <= zMax; z += pD) {
-			double[] ellipse = getEllipseAtZ(ellipsoidEquation, z);
-			ArrayList<double[]> points = findEllipseContactPoints(ellipse,
+		for (double z = zMin; z <= zMax; z += 3*pD ) {
+			double[] ellipse = getEllipseAtZ(eEq, z);
+			
+			ellipseLog.incrementCounter();
+			ellipseLog.addLabel(name);
+			ellipseLog.addValue("x²", ellipse[0]);
+			ellipseLog.addValue("y²", ellipse[1]);
+			ellipseLog.addValue("xy", ellipse[2]);
+			ellipseLog.addValue("2x", ellipse[3]);
+			ellipseLog.addValue("2y", ellipse[4]);
+			ellipseLog.addValue("g", ellipse[5]);
+			ellipseLog.show("Ellipse coefficients");
+			
+			ArrayList<double[]> points = findEllipseContactPoints(ellipse, name,
 					pixels, pW, pH, pD, w, h, d);
 
 			for (double[] p : points) {
@@ -1677,7 +1712,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		return ellipse;
 	}
 
-	private ArrayList<double[]> findEllipseContactPoints(double[] ellipse,
+	private ArrayList<double[]> findEllipseContactPoints(double[] ellipse, String name,
 			byte[][] pixels, double pW, double pH, double pD, int sw, int sh,
 			int sd) {
 
@@ -1781,10 +1816,17 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		//
 		// // use variable names same as Da Silva (1989)
 		// // http://cs.brown.edu/research/pubs/theses/masters/1989/dasilva.pdf
+		ellipseScanLog.incrementCounter();
+		ellipseScanLog.addLabel(name);
 		final double A = a;
 		final double B = b * 2; // da Silva uses the doubled formulation
 		final double C = c;
 		final double D = g;
+		ellipseScanLog.addValue("A", A);
+		ellipseScanLog.addValue("B", B);
+		ellipseScanLog.addValue("C", C);
+		ellipseScanLog.addValue("D", D);
+		
 		//
 		// final double A = aSq - XfSq;
 		// final double B = -Xf * Yf;
@@ -1797,30 +1839,44 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		final double B_2 = B / 2;
 
 		final double k1 = -B / C2;
+		ellipseScanLog.addValue("k1", k1);
+		
 		double Xv = Math.sqrt(-D / (A + B * k1 + C * k1 * k1));
+		ellipseScanLog.addValue("Xv", Xv);
 		if (Xv < 0)
 			Xv = -Xv;
 
 		final double Yv = k1 * Xv;
+		ellipseScanLog.addValue("Yv", Yv);
 
 		final double k2 = -B / A2;
+		ellipseScanLog.addValue("k2", k2);
 		double Yh = Math.sqrt(-D / (A * k2 * k2 + B * k2 + C));
+		ellipseScanLog.addValue("Yh", Yh);
 		if (Yh < 0)
 			Yh = -Yh;
 		final double Xh = k2 * Yh;
+		ellipseScanLog.addValue("Xh", Xh);
 
 		final double k3 = (A2 - B) / (C2 - B);
+		ellipseScanLog.addValue("k3", k3);
 		final double Xr = Math.sqrt(-D / (A + B * k3 + C * k3 * k3));
 		double Yr = k3 * Xr;
+		ellipseScanLog.addValue("Yr", Yr);
 		if (Xr < Yr * k1)
 			Yr = -Yr;
 
 		final double k4 = (-A2 - B) / (C2 + B);
+		ellipseScanLog.addValue("k4", k4);
 		double Xl = Math.sqrt(-D / (A + B * k4 + C * k4 * k4));
+		ellipseScanLog.addValue("Xl", Xl);
 		final double Yl = k4 * Xl;
+		ellipseScanLog.addValue("Yl", Yl);
 		if (Xl > Yl * k1)
 			Xl = -Xl;
 
+		ellipseScanLog.show("Ellipse scan conversion");
+		
 		ArrayList<double[]> ellipsePixels = new ArrayList<double[]>();
 
 		ellipsePixels.add(new double[] { Xv + x0, Yv + y0 }); // ok r8 - r1
