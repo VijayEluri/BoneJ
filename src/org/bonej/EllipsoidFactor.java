@@ -1879,7 +1879,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		double Xl = Math.sqrt(-D / (A + B * k4 + C * k4 * k4));
 		if (Double.isNaN(Xl))
 			Xl = 0;
-		final double Yl = k4 * Xl;
+		final double Yl = -k4 * Xl;
 		if (Xl > Yl * k1)
 			Xl = -Xl;
 		
@@ -1893,12 +1893,12 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		ellipsePixels.add(new double[] { Xv + x0, Yv + y0 }); // ok r8 - r1
 		ellipsePixels.add(new double[] { Xr + x0, Yr + y0 }); // ok r1 - r2
 		ellipsePixels.add(new double[] { Xh + x0, Yh + y0 }); // ok r2 - r3
-		ellipsePixels.add(new double[] { Xl + x0, -1 * Yl + y0 }); // ok r3 - r4
+		ellipsePixels.add(new double[] { Xl + x0, Yl + y0 }); // ok r3 - r4
 		ellipsePixels.add(new double[] { -Xv + x0, -Yv + y0 }); // end of r4 is
 																// (-Xv, -Yv)
 		ellipsePixels.add(new double[] { -Xr + x0, -Yr + y0 });
 		ellipsePixels.add(new double[] { -Xh + x0, -Yh + y0 });
-		ellipsePixels.add(new double[] { -Xl + x0, -1 * -Yl + y0 });
+		ellipsePixels.add(new double[] { -Xl + x0, -Yl + y0 });
 		ellipsePixels.add(new double[] { Xv + x0, Yv + y0 });
 
 		// original uses rounded variables due to integer pixel space
