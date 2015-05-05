@@ -112,6 +112,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 	private ResultsTable ellipseLog;
 
 	private ResultsTable ellipseScanLog;
+
 	public void run(String arg) {
 		if (!ImageCheck.checkEnvironment())
 			return;
@@ -1250,12 +1251,12 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		debugLog.addValue("2y", eEq[7]);
 		debugLog.addValue("2z", eEq[8]);
 		debugLog.show("Ellipsoid equations");
-		
+
 		List<Point3f> points3D = new ArrayList<Point3f>();
 
-		for (double z = zMin; z <= zMax; z += 3*pD ) {
+		for (double z = zMin; z <= zMax; z += 3 * pD) {
 			double[] ellipse = getEllipseAtZ(eEq, z);
-			
+
 			ellipseLog.incrementCounter();
 			ellipseLog.addLabel(name);
 			ellipseLog.addValue("x²", ellipse[0]);
@@ -1265,9 +1266,9 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			ellipseLog.addValue("2y", ellipse[4]);
 			ellipseLog.addValue("g", ellipse[5]);
 			ellipseLog.show("Ellipse coefficients");
-			
-			ArrayList<double[]> points = findEllipseContactPoints(ellipse, name,
-					pixels, pW, pH, pD, w, h, d);
+
+			ArrayList<double[]> points = findEllipseContactPoints(ellipse,
+					name, pixels, pW, pH, pD, w, h, d);
 
 			for (double[] p : points) {
 				points3D.add(new Point3f((float) p[0], (float) p[1], (float) z));
@@ -1286,8 +1287,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 					"AABB of " + name, false).setLocked(true);
 			universe.addCustomMesh(ellipseMesh, "Ellipses of " + name)
 					.setLocked(true);
-			universe.addLineMesh(points3D, new Color3f(1.0f, 1.0f, 0.0f),
-					"Ellipse regions of " + name, true).setLocked(true);
+			// universe.addLineMesh(points3D, new Color3f(1.0f, 1.0f, 0.0f),
+			// "Ellipse regions of " + name, true).setLocked(true);
 
 		} catch (Exception e) {
 			IJ.log("Something went wrong adding meshes to 3D viewer:\n"
@@ -1711,9 +1712,9 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		return ellipse;
 	}
 
-	private ArrayList<double[]> findEllipseContactPoints(double[] ellipse, String name,
-			byte[][] pixels, double pW, double pH, double pD, int sw, int sh,
-			int sd) {
+	private ArrayList<double[]> findEllipseContactPoints(double[] ellipse,
+			String name, byte[][] pixels, double pW, double pH, double pD,
+			int sw, int sh, int sd) {
 
 		// translate ellipse to xy origin
 		final double a = ellipse[0];
@@ -1825,7 +1826,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		ellipseScanLog.addValue("B", B);
 		ellipseScanLog.addValue("C", C);
 		ellipseScanLog.addValue("D", D);
-		
+
 		//
 		// final double A = aSq - XfSq;
 		// final double B = -Xf * Yf;
@@ -1839,12 +1840,12 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 		final double k1 = -B / C2;
 		ellipseScanLog.addValue("k1", k1);
-		
+
 		double Xv = Math.sqrt(-D / (A + B * k1 + C * k1 * k1));
 		if (Double.isNaN(Xv))
 			Xv = 0;
 		final double Yv = k1 * Xv;
-		
+
 		ellipseScanLog.addValue("Xv", Xv);
 		ellipseScanLog.addValue("Yv", Yv);
 
@@ -1854,45 +1855,44 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		if (Double.isNaN(Yh))
 			Yh = 0;
 		final double Xh = k2 * Yh;
-		
+
 		ellipseScanLog.addValue("Xh", Xh);
 		ellipseScanLog.addValue("Yh", Yh);
-		
+
 		final double k3 = (A2 - B) / (C2 - B);
 		ellipseScanLog.addValue("k3", k3);
-		//Xr always positive (to right of origin)
+		// Xr always positive (to right of origin)
 		double Xr = Math.sqrt(-D / (A + B * k3 + C * k3 * k3));
 		if (Double.isNaN(Xr))
 			Xr = 0;
 		double Yr = k3 * Xr;
-		if (Yr < 0 )
+		if (Yr < 0)
 			Yr = -Yr;
-		
+
 		ellipseScanLog.addValue("Yrk1 - Xr", Yr * k1 - Xr);
 		ellipseScanLog.addValue("Xr", Xr);
 		ellipseScanLog.addValue("Yr", Yr);
 
-		//sometimes k4 evaluates to +ve value, though usually -ve
+		// sometimes k4 evaluates to +ve value, though usually -ve
 		final double k4 = (-A2 - B) / (C2 + B);
 		ellipseScanLog.addValue("k4", k4);
-		//Xl always negative (to left of origin)
+		// Xl always negative (to left of origin)
 		double Xl = -Math.sqrt(-D / (A + B * k4 + C * k4 * k4));
 		if (Double.isNaN(Xl))
 			Xl = 0;
 		double Yl = k4 * Xl;
 		if (Yl < 0)
 			Yl *= -1;
-		
+
 		ellipseScanLog.addValue("Ylk1 - Xl", Yl * k1 - Xl);
 		ellipseScanLog.addValue("Xl", Xl);
 		ellipseScanLog.addValue("Yl", Yl);
 
 		ellipseScanLog.show("Ellipse scan conversion");
-		
+
 		ArrayList<double[]> ellipsePixels = new ArrayList<double[]>();
 
-		ellipsePixels.add(new double[] { Xv + x0, Yv + y0 }); // ok r8 - r1
-
+		// ellipsePixels.add(new double[] { Xv + x0, Yv + y0 }); // ok r8 - r1
 
 		// original uses rounded variables due to integer pixel space
 		// here we will stay in real space until doing the pixel lookup
@@ -1940,14 +1940,13 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		// ArrayList<double[]> ellipsePixels = new ArrayList<double[]>();
 
 		// region 1
-		IJ.log("region1");
 		int ifCount = 0;
 		int elseCount = 0;
 		while (y < YR) {
-			 double[] pixel = { x + x0, y + y0 };
-			 ellipsePixels.add(pixel);
-			// double[] pixelOpp = { -x + x0, -y + y0 };
-			// ellipsePixels.add(pixelOpp);
+			double[] pixel = { x + x0, y + y0 };
+			ellipsePixels.add(pixel);
+			double[] pixelOpp = { -x + x0, -y + y0 };
+			ellipsePixels.add(pixelOpp);
 			y += pH;
 			if (d1 < 0 || (Fn - Fnw) < cross1) {
 				ifCount++;
@@ -1962,32 +1961,22 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 				Fnw += Fnw_nw;
 			}
 		}
-		IJ.log("ifCount = " + ifCount + ", elseCount = " + elseCount);
+		IJ.log("region1\nifCount = " + ifCount + ", elseCount = " + elseCount);
 
-		ellipsePixels.add(new double[] { Xr + x0, Yr + y0 }); // ok r1 - r2
-		ellipsePixels.add(new double[] { Xh + x0, Yh + y0 }); // ok r2 - r3
-		ellipsePixels.add(new double[] { Xl + x0, Yl + y0 }); // ok r3 - r4
-		ellipsePixels.add(new double[] { -Xv + x0, -Yv + y0 }); // end of r4 is
-																// (-Xv, -Yv)
-		ellipsePixels.add(new double[] { -Xr + x0, -Yr + y0 });
-		ellipsePixels.add(new double[] { -Xh + x0, -Yh + y0 });
-		ellipsePixels.add(new double[] { -Xl + x0, -Yl + y0 });
-		ellipsePixels.add(new double[] { Xv + x0, Yv + y0 });
-		
-		
+		// ellipsePixels.add(new double[] { Xr + x0, Yr + y0 }); // ok r1 - r2
+
 		double Fw = Fnw - Fn + A + B + B_2;
 		Fnw += A - C;
 		double d2 = d1 + (Fw - Fn + C) / 2 + (A + C) / 4 - A;
 
 		// region2
-		IJ.log("region2");
 		ifCount = 0;
 		elseCount = 0;
 		while (x > XH) {
-//			 double[] pixel = { x + x0, y + y0 };
-//			 ellipsePixels.add(pixel);
-			// double[] pixelOpp = { -x + x0, -y + y0 };
-			// ellipsePixels.add(pixelOpp);
+			double[] pixel = { x + x0, y + y0 };
+			ellipsePixels.add(pixel);
+			double[] pixelOpp = { -x + x0, -y + y0 };
+			ellipsePixels.add(pixelOpp);
 			x -= pW;
 			if (d2 < 0 || (Fnw - Fw < cross2)) {
 				ifCount++;
@@ -2002,21 +1991,22 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 				Fnw += Fnw_w;
 			}
 		}
-		IJ.log("ifCount = " + ifCount + ", elseCount = " + elseCount);
+		IJ.log("region2\nifCount = " + ifCount + ", elseCount = " + elseCount);
+
+		// ellipsePixels.add(new double[] { Xh + x0, Yh + y0 }); // ok r2 - r3
 
 		double d3 = d2 + Fw - Fnw + C2 - B;
 		Fw += B;
 		double Fsw = Fw - Fnw + Fw + C2 + C2 - B;
 
 		// region 3
-		IJ.log("region3");
 		ifCount = 0;
 		elseCount = 0;
-		while (x < XL) {
-//			 double[] pixel = { x + x0, y + y0 };
-//			 ellipsePixels.add(pixel);
-			// double[] pixelOpp = { -x + x0, -y + y0 };
-			// ellipsePixels.add(pixelOpp);
+		while (x > XL) {
+			double[] pixel = { x + x0, y + y0 };
+			ellipsePixels.add(pixel);
+			double[] pixelOpp = { -x + x0, -y + y0 };
+			ellipsePixels.add(pixelOpp);
 			x -= pW;
 			if (d3 < 0 || Fsw - Fw > cross3) {
 				ifCount++;
@@ -2031,7 +2021,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 				Fsw += Fsw_sw;
 			}
 		}
-		IJ.log("ifCount = " + ifCount + ", elseCount = " + elseCount);
+		IJ.log("region 3\nifCount = " + ifCount + ", elseCount = " + elseCount);
+		// ellipsePixels.add(new double[] { Xl + x0, Yl + y0 }); // ok r3 - r4
 
 		double Fs = Fsw - Fw - B;
 		double d4 = d3 - Fsw / 2 + Fs + A - (A + C - B) / 4;
@@ -2040,14 +2031,13 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		YV = -YV;
 
 		// region 4
-		IJ.log("region4");
 		ifCount = 0;
 		elseCount = 0;
 		while (y > YV) {
-//			 double[] pixel = { x + x0, y + y0 };
-//			 ellipsePixels.add(pixel);
-			// double[] pixelOpp = { -x + x0, -y + y0 };
-			// ellipsePixels.add(pixelOpp);
+			double[] pixel = { x + x0, y + y0 };
+			ellipsePixels.add(pixel);
+			double[] pixelOpp = { -x + x0, -y + y0 };
+			ellipsePixels.add(pixelOpp);
 			y -= pH;
 			if (d4 < 0 || Fsw - Fs < cross4) {
 				ifCount++;
@@ -2057,16 +2047,23 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 				Fsw += Fsw_sw;
 			} else {
 				elseCount++;
-				d1 += Fs;
+				d4 += Fs;
 				Fs += Fs_s;
 				Fsw += Fsw_s;
 			}
 		}
-//		IJ.log("ifCount = " + ifCount + ", elseCount = " + elseCount);
-//		double[] pixel = { x + x0, y + y0 };
-//		ellipsePixels.add(pixel);
-//		double[] pixelOpp = { -x + x0, -y + y0 };
-//		ellipsePixels.add(pixelOpp);
+		IJ.log("region 4\nifCount = " + ifCount + ", elseCount = " + elseCount);
+		// ellipsePixels.add(new double[] { -Xv + x0, -Yv + y0 }); // end of r4
+		// is
+		// (-Xv, -Yv)
+		// ellipsePixels.add(new double[] { -Xr + x0, -Yr + y0 });
+		// ellipsePixels.add(new double[] { -Xh + x0, -Yh + y0 });
+		// ellipsePixels.add(new double[] { -Xl + x0, -Yl + y0 });
+		// ellipsePixels.add(new double[] { Xv + x0, Yv + y0 });
+		double[] pixel = { x + x0, y + y0 };
+		ellipsePixels.add(pixel);
+		double[] pixelOpp = { -x + x0, -y + y0 };
+		ellipsePixels.add(pixelOpp);
 
 		return ellipsePixels;
 	}
