@@ -1860,25 +1860,30 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		
 		final double k3 = (A2 - B) / (C2 - B);
 		ellipseScanLog.addValue("k3", k3);
+		//Xr always positive (to right of origin)
 		double Xr = Math.sqrt(-D / (A + B * k3 + C * k3 * k3));
 		if (Double.isNaN(Xr))
 			Xr = 0;
 		double Yr = k3 * Xr;
-		if (Xr < Yr * k1)
+		if (Yr < 0 )
 			Yr = -Yr;
 		
+		ellipseScanLog.addValue("Yrk1 - Xr", Yr * k1 - Xr);
 		ellipseScanLog.addValue("Xr", Xr);
 		ellipseScanLog.addValue("Yr", Yr);
 
+		//sometimes k4 evaluates to +ve value, though usually -ve
 		final double k4 = (-A2 - B) / (C2 + B);
 		ellipseScanLog.addValue("k4", k4);
-		double Xl = Math.sqrt(-D / (A + B * k4 + C * k4 * k4));
+		//Xl always negative (to left of origin)
+		double Xl = -Math.sqrt(-D / (A + B * k4 + C * k4 * k4));
 		if (Double.isNaN(Xl))
 			Xl = 0;
-		final double Yl = -k4 * Xl;
-		if (Xl > Yl * k1)
-			Xl = -Xl;
+		double Yl = k4 * Xl;
+		if (Yl < 0)
+			Yl *= -1;
 		
+		ellipseScanLog.addValue("Ylk1 - Xl", Yl * k1 - Xl);
 		ellipseScanLog.addValue("Xl", Xl);
 		ellipseScanLog.addValue("Yl", Yl);
 
