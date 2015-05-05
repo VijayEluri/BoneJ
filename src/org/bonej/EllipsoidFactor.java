@@ -111,7 +111,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 	private ResultsTable ellipseLog;
 
-	private ResultsTable ellipseScanLog;
+//	private ResultsTable ellipseScanLog;
 
 	public void run(String arg) {
 		if (!ImageCheck.checkEnvironment())
@@ -191,7 +191,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			universe.show();
 			debugLog = new ResultsTable();
 			ellipseLog = new ResultsTable();
-			ellipseScanLog = new ResultsTable();
+//			ellipseScanLog = new ResultsTable();
 		}
 
 		long start = System.currentTimeMillis();
@@ -1235,7 +1235,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 		// ellipses
 		double[] zLimits = ellipsoid.getZMinAndMax();
-		final double zMin = zLimits[0];
+		double zMin = zLimits[0];
 		final double zMax = zLimits[1];
 		final double[] eEq = ellipsoid.getEquation();
 
@@ -1254,7 +1254,9 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 		List<Point3f> points3D = new ArrayList<Point3f>();
 
-		for (double z = zMin; z <= zMax; z += 3 * pD) {
+		zMin = pD * (Math.floor(zMin / pD) + 1);
+		
+		for (double z = zMin; z <= zMax; z += pD) {
 			double[] ellipse = getEllipseAtZ(eEq, z);
 
 			ellipseLog.incrementCounter();
@@ -1816,16 +1818,16 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		//
 		// // use variable names same as Da Silva (1989)
 		// // http://cs.brown.edu/research/pubs/theses/masters/1989/dasilva.pdf
-		ellipseScanLog.incrementCounter();
-		ellipseScanLog.addLabel(name);
+//		ellipseScanLog.incrementCounter();
+//		ellipseScanLog.addLabel(name);
 		final double A = -a;
 		final double B = -b * 2; // da Silva uses the doubled formulation
 		final double C = -c;
 		final double D = -g;
-		ellipseScanLog.addValue("A", A);
-		ellipseScanLog.addValue("B", B);
-		ellipseScanLog.addValue("C", C);
-		ellipseScanLog.addValue("D", D);
+//		ellipseScanLog.addValue("A", A);
+//		ellipseScanLog.addValue("B", B);
+//		ellipseScanLog.addValue("C", C);
+//		ellipseScanLog.addValue("D", D);
 
 		//
 		// final double A = aSq - XfSq;
@@ -1839,28 +1841,28 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		final double B_2 = B / 2;
 
 		final double k1 = -B / C2;
-		ellipseScanLog.addValue("k1", k1);
+//		ellipseScanLog.addValue("k1", k1);
 
 		double Xv = Math.sqrt(-D / (A + B * k1 + C * k1 * k1));
 		if (Double.isNaN(Xv))
 			Xv = 0;
 		final double Yv = k1 * Xv;
-
-		ellipseScanLog.addValue("Xv", Xv);
-		ellipseScanLog.addValue("Yv", Yv);
+//
+//		ellipseScanLog.addValue("Xv", Xv);
+//		ellipseScanLog.addValue("Yv", Yv);
 
 		final double k2 = -B / A2;
-		ellipseScanLog.addValue("k2", k2);
+//		ellipseScanLog.addValue("k2", k2);
 		double Yh = Math.sqrt(-D / (A * k2 * k2 + B * k2 + C));
 		if (Double.isNaN(Yh))
 			Yh = 0;
 		final double Xh = k2 * Yh;
 
-		ellipseScanLog.addValue("Xh", Xh);
-		ellipseScanLog.addValue("Yh", Yh);
+//		ellipseScanLog.addValue("Xh", Xh);
+//		ellipseScanLog.addValue("Yh", Yh);
 
 		final double k3 = (A2 - B) / (C2 - B);
-		ellipseScanLog.addValue("k3", k3);
+//		ellipseScanLog.addValue("k3", k3);
 		// Xr always positive (to right of origin)
 		double Xr = Math.sqrt(-D / (A + B * k3 + C * k3 * k3));
 		if (Double.isNaN(Xr))
@@ -1869,13 +1871,13 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		if (Yr < 0)
 			Yr = -Yr;
 
-		ellipseScanLog.addValue("Yrk1 - Xr", Yr * k1 - Xr);
-		ellipseScanLog.addValue("Xr", Xr);
-		ellipseScanLog.addValue("Yr", Yr);
+//		ellipseScanLog.addValue("Yrk1 - Xr", Yr * k1 - Xr);
+//		ellipseScanLog.addValue("Xr", Xr);
+//		ellipseScanLog.addValue("Yr", Yr);
 
 		// sometimes k4 evaluates to +ve value, though usually -ve
 		final double k4 = (-A2 - B) / (C2 + B);
-		ellipseScanLog.addValue("k4", k4);
+//		ellipseScanLog.addValue("k4", k4);
 		// Xl always negative (to left of origin)
 		double Xl = -Math.sqrt(-D / (A + B * k4 + C * k4 * k4));
 		if (Double.isNaN(Xl))
@@ -1884,11 +1886,11 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		if (Yl < 0)
 			Yl *= -1;
 
-		ellipseScanLog.addValue("Ylk1 - Xl", Yl * k1 - Xl);
-		ellipseScanLog.addValue("Xl", Xl);
-		ellipseScanLog.addValue("Yl", Yl);
-
-		ellipseScanLog.show("Ellipse scan conversion");
+//		ellipseScanLog.addValue("Ylk1 - Xl", Yl * k1 - Xl);
+//		ellipseScanLog.addValue("Xl", Xl);
+//		ellipseScanLog.addValue("Yl", Yl);
+//
+//		ellipseScanLog.show("Ellipse scan conversion");
 
 		ArrayList<double[]> ellipsePixels = new ArrayList<double[]>();
 
