@@ -1841,8 +1841,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		ellipseScanLog.addValue("k1", k1);
 		
 		double Xv = Math.sqrt(-D / (A + B * k1 + C * k1 * k1));
-		if (Xv < 0)
-			Xv = -Xv;
 		if (Double.isNaN(Xv))
 			Xv = 0;
 		final double Yv = k1 * Xv;
@@ -1853,8 +1851,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		final double k2 = -B / A2;
 		ellipseScanLog.addValue("k2", k2);
 		double Yh = Math.sqrt(-D / (A * k2 * k2 + B * k2 + C));
-		if (Yh < 0)
-			Yh = -Yh;
 		if (Double.isNaN(Yh))
 			Yh = 0;
 		final double Xh = k2 * Yh;
