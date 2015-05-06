@@ -123,8 +123,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		}
 		ImageCheck ic = new ImageCheck();
 		if (!ic.isBinary(imp) || !ic.isMultiSlice(imp)
-				|| !ic.isVoxelIsotropic(imp, 0.001)) {
-			IJ.error("8-bit binary stack with isotropic pixel spacing required.");
+				){//|| !ic.isVoxelIsotropic(imp, 0.001)) {
+			IJ.error("8-bit binary stack required.");
 			return;
 		}
 		Calibration cal = imp.getCalibration();
