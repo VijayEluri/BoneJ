@@ -1820,10 +1820,10 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		// // http://cs.brown.edu/research/pubs/theses/masters/1989/dasilva.pdf
 //		ellipseScanLog.incrementCounter();
 //		ellipseScanLog.addLabel(name);
-		final double A = -a;
-		final double B = -b * 2; // da Silva uses the doubled formulation
-		final double C = -c;
-		final double D = -g;
+		final double A = -a * pW;
+		final double B = -b * 2 * pW; // da Silva uses the doubled formulation
+		final double C = -c * pW;
+		final double D = -g * pW;
 //		ellipseScanLog.addValue("A", A);
 //		ellipseScanLog.addValue("B", B);
 //		ellipseScanLog.addValue("C", C);
@@ -1952,15 +1952,15 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			y += pH;
 			if (d1 < 0 || (Fn - Fnw) < cross1) {
 				ifCount++;
-				d1 += Fn;
-				Fn += Fn_n;
-				Fnw += Fnw_n;
+				d1 += Fn * pW;
+				Fn += Fn_n * pW;
+				Fnw += Fnw_n * pW;
 			} else {
 				elseCount++;
 				x -= pW;
-				d1 += Fnw;
-				Fn += Fn_nw;
-				Fnw += Fnw_nw;
+				d1 += Fnw * pW;
+				Fn += Fn_nw * pW;
+				Fnw += Fnw_nw * pW;
 			}
 		}
 		IJ.log("region1\nifCount = " + ifCount + ", elseCount = " + elseCount);
@@ -1983,14 +1983,14 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			if (d2 < 0 || (Fnw - Fw < cross2)) {
 				ifCount++;
 				y += pH;
-				d2 += Fnw;
-				Fw += Fw_nw;
-				Fnw += Fnw_nw;
+				d2 += Fnw * pW;
+				Fw += Fw_nw * pW;
+				Fnw += Fnw_nw * pW;
 			} else {
 				elseCount++;
-				d2 += Fw;
-				Fw += Fw_w;
-				Fnw += Fnw_w;
+				d2 += Fw * pW;
+				Fw += Fw_w * pW;
+				Fnw += Fnw_w * pW;
 			}
 		}
 		IJ.log("region2\nifCount = " + ifCount + ", elseCount = " + elseCount);
@@ -2012,15 +2012,15 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			x -= pW;
 			if (d3 < 0 || Fsw - Fw > cross3) {
 				ifCount++;
-				d3 += Fw;
-				Fw += Fw_w;
-				Fsw += Fsw_w;
+				d3 += Fw * pW;
+				Fw += Fw_w * pW;
+				Fsw += Fsw_w * pW;
 			} else {
 				elseCount++;
 				y -= pH;
-				d3 += Fsw;
-				Fw += Fw_sw;
-				Fsw += Fsw_sw;
+				d3 += Fsw * pW;
+				Fw += Fw_sw * pW;
+				Fsw += Fsw_sw * pW;
 			}
 		}
 		IJ.log("region 3\nifCount = " + ifCount + ", elseCount = " + elseCount);
@@ -2044,14 +2044,14 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			if (d4 < 0 || Fsw - Fs < cross4) {
 				ifCount++;
 				x -= pW;
-				d4 += Fsw;
-				Fs += Fs_sw;
-				Fsw += Fsw_sw;
+				d4 += Fsw * pW;
+				Fs += Fs_sw * pW;
+				Fsw += Fsw_sw * pW;
 			} else {
 				elseCount++;
-				d4 += Fs;
-				Fs += Fs_s;
-				Fsw += Fsw_s;
+				d4 += Fs * pW;
+				Fs += Fs_s * pW;
+				Fsw += Fsw_s * pW;
 			}
 		}
 		IJ.log("region 4\nifCount = " + ifCount + ", elseCount = " + elseCount);
