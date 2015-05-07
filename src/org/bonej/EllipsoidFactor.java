@@ -38,6 +38,7 @@ import ij.process.ImageProcessor;
 import ij.gui.GenericDialog;
 import ij.gui.Plot;
 import ij.measure.Calibration;
+import ij.measure.ResultsTable;
 //import ij.measure.ResultsTable;
 import ij3d.Image3DUniverse;
 
@@ -105,6 +106,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 	private Image3DUniverse universe;
 
 	private double stackVolume;
+
+	private ResultsTable debugLog, criticalPoints;
 
 	// private ResultsTable ellipseScanLog;
 
@@ -185,6 +188,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		if (IJ.debugMode) {
 			universe = new Image3DUniverse();
 			universe.show();
+			debugLog = new ResultsTable();
+			criticalPoints = new ResultsTable();
 		}
 
 		long start = System.currentTimeMillis();
@@ -255,7 +260,10 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 		// ResultInserter ri = ResultInserter.getInstance();
 		// ri.updateTable();
-		// if (IJ.debugMode)
+		if (IJ.debugMode) {
+			debugLog.show("Ellipsoid variables");
+			criticalPoints.show("Critical points");
+		}
 		// rt.show("Ellipsoid volumes");
 		UsageReporter.reportEvent(this).send();
 		IJ.showStatus("Ellipsoid Factor completed");
@@ -1703,16 +1711,30 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		final double ej = eEq[7];
 		final double ek = eEq[8];
 
+		if (IJ.debugMode) {
+			debugLog.incrementCounter();
+			debugLog.addLabel(name);
+			debugLog.addValue("x²", eEq[0]);
+			debugLog.addValue("y²", eEq[1]);
+			debugLog.addValue("z²", eEq[2]);
+			debugLog.addValue("2xy", eEq[3]);
+			debugLog.addValue("2xz", eEq[4]);
+			debugLog.addValue("2yz", eEq[5]);
+			debugLog.addValue("2x", eEq[6]);
+			debugLog.addValue("2y", eEq[7]);
+			debugLog.addValue("2z", eEq[8]);
+		}
+
 		final double a = ea;
 		final double b = ed;
 		final double c = eb;
-		
+
 		final double b2ac = b * b - a * c;
-		
+
 		final double A = -a;
 		final double B = -b * 2; // da Silva uses the doubled value
 		final double C = -c;
-		
+
 		final double A2 = A + A;
 		final double B2 = B + B;
 		final double C2 = C + C;
@@ -1722,12 +1744,12 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		final double k2 = -B / A2;
 		final double k3 = (A2 - B) / (C2 - B);
 		final double k4 = (-A2 - B) / (C2 + B);
-		
+
 		final double abck1 = A + B * k1 + C * k1 * k1;
 		final double abck2 = A * k2 * k2 + B * k2 + C;
 		final double abck3 = A + B * k3 + C * k3 * k3;
 		final double abck4 = A + B * k4 + C * k4 * k4;
-		
+
 		double Fn_n = C2;
 		double Fw_w = A2;
 		double Fs_s = C2;
@@ -1746,7 +1768,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		final double cross2 = A - B + C;
 		final double cross3 = A + B + C;
 		final double cross4 = A + B;
-		
+
 		ArrayList<double[]> ellipsePixels = new ArrayList<double[]>();
 
 		for (double z = zMin; z <= zMax; z += pD / pW) {
@@ -1785,15 +1807,28 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 				Yr = -Yr;
 
 			// Xl always negative (to left of origin)
-			double Xl = -Math.sqrt(-D / abck4 );
+			double Xl = -Math.sqrt(-D / abck4);
 			if (Double.isNaN(Xl))
 				Xl = 0;
 			double Yl = k4 * Xl;
 			if (Yl < 0)
 				Yl *= -1;
 
+			if (IJ.debugMode) {
+				criticalPoints.incrementCounter();
+				criticalPoints.addLabel(name);
+				criticalPoints.addValue("Xv", Xv);
+				criticalPoints.addValue("Yv", Yv);
+				criticalPoints.addValue("Xr", Xr);
+				criticalPoints.addValue("Yr", Yr);
+				criticalPoints.addValue("Xh", Xh);
+				criticalPoints.addValue("Yh", Yh);
+				criticalPoints.addValue("Xl", Xl);
+				criticalPoints.addValue("Yl", Yl);
+			}
+
 			final double XV = Math.round(Xv);
-			double YV = Math.round(Yv);
+			final double YV = Math.round(Yv);
 			final double YR = Math.round(Yr);
 			final double XH = Math.round(Xh);
 			final double XL = Math.round(Xl);
@@ -1848,7 +1883,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 				}
 			}
 
-			double d3 = d2 + (Fw - Fnw + C2 - B);
+			double d3 = d2 + Fw - Fnw + C2 - B;
 			Fw += B;
 			double Fsw = Fw - Fnw + Fw + C2 + C2 - B;
 
@@ -1873,10 +1908,10 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			double d4 = d3 - Fsw / 2 + Fs + A - (A + C - B) / 4;
 			Fsw += C - A;
 			Fs += C - B_2;
-			YV = -YV;
+			final double minusYV = -YV;
 
 			// region 4
-			while (y > YV) {
+			while (y > minusYV) {
 				ellipsePixels.add(new double[] { x + x0, y + y0, z });
 				ellipsePixels.add(new double[] { -x + x0, -y + y0, z });
 				y -= 1;
