@@ -1701,6 +1701,66 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		final double zMax = zLimits[1];
 		final double[] eEq = scaledEllipsoid.getEquation();
 
+		final double ea = eEq[0];
+		final double eb = eEq[1];
+		final double ec = eEq[2];
+		final double ed = eEq[3];
+		final double ef = eEq[4];
+		final double eg = eEq[5];
+		final double eh = eEq[6];
+		final double ej = eEq[7];
+		final double ek = eEq[8];
+
+		final double a = ea;
+		final double b = ed;
+		final double c = eb;
+		
+		final double b2ac = b * b - a * c;
+		
+		final double A = -a;
+		final double B = -b * 2; // da Silva uses the doubled value
+		final double C = -c;
+		
+		final double A2 = A + A;
+		final double B2 = B + B;
+		final double C2 = C + C;
+		final double B_2 = B / 2;
+
+		final double k1 = -B / C2;
+		final double k2 = -B / A2;
+		final double k3 = (A2 - B) / (C2 - B);
+		final double k4 = (-A2 - B) / (C2 + B);
+		
+		final double abck1 = A + B * k1 + C * k1 * k1;
+		final double abck2 = A * k2 * k2 + B * k2 + C;
+		final double abck3 = A + B * k3 + C * k3 * k3;
+		final double abck4 = A + B * k4 + C * k4 * k4;
+		
+		double Fn_n = C2;
+		double Fw_w = A2;
+		double Fs_s = C2;
+		double Fn_nw = C2 - B;
+		double Fnw_n = Fn_nw;
+		double Fw_nw = A2 - B;
+		double Fnw_w = Fw_nw;
+		double Fw_sw = A2 + B;
+		double Fsw_w = Fw_sw;
+		double Fnw_nw = A2 - B2 + C2;
+		double Fsw_sw = A2 + B2 + C2;
+		double Fs_sw = C2 + B;
+		double Fsw_s = Fs_sw;
+
+		final double cross1 = B - A;
+		final double cross2 = A - B + C;
+		final double cross3 = A + B + C;
+		final double cross4 = A + B;
+
+//		double d = z * ef + eh;
+//		double f = z * eg + ej;
+//		double g = z * (2 * ek + ec * z) - 1;
+		
+		
+		
 		debugLog.incrementCounter();
 		debugLog.addLabel(name);
 		debugLog.addValue("x²", eEq[0]);
@@ -1731,16 +1791,17 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			ellipseLog.show("Ellipse coefficients");
 
 			// translate ellipse to xy origin
-			final double a = ellipse[0];
-			final double b = ellipse[1];
-			final double c = ellipse[2];
+//			final double a = ellipse[0];
+//			final double b = ellipse[1];
+//			final double c = ellipse[2];
 
 			// d and f are used to calculate the translated equation
-			final double d = ellipse[3];
-			final double f = ellipse[4];
-			double g = ellipse[5];
-
-			final double b2ac = b * b - a * c;
+//			final double d = ellipse[3];
+//			final double f = ellipse[4];
+//			double g = ellipse[5];
+			final double d = z * ef + eh;
+			final double f = z * eg + ej;
+			double g = z * (2 * ek + ec * z) - 1;
 
 			final double x0 = (c * d - b * f) / b2ac;
 			final double y0 = (a * f - b * d) / b2ac;
@@ -1751,24 +1812,24 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 			// use variable names same as Da Silva (1989)
 			// http://cs.brown.edu/research/pubs/theses/masters/1989/dasilva.pdf
-			final double A = -a;
-			final double B = -b * 2; // da Silva uses the doubled value
-			final double C = -c;
+//			final double A = -a;
+//			final double B = -b * 2; // da Silva uses the doubled value
+//			final double C = -c;
 			final double D = -g;
 			// ellipseScanLog.addValue("A", A);
 			// ellipseScanLog.addValue("B", B);
 			// ellipseScanLog.addValue("C", C);
 			// ellipseScanLog.addValue("D", D);
 
-			final double A2 = A + A;
-			final double B2 = B + B;
-			final double C2 = C + C;
-			final double B_2 = B / 2;
-
-			final double k1 = -B / C2;
+//			final double A2 = A + A;
+//			final double B2 = B + B;
+//			final double C2 = C + C;
+//			final double B_2 = B / 2;
+//
+//			final double k1 = -B / C2;
 			// ellipseScanLog.addValue("k1", k1);
 
-			double Xv = Math.sqrt(-D / (A + B * k1 + C * k1 * k1));
+			double Xv = Math.sqrt(-D / abck1);
 			if (Double.isNaN(Xv))
 				Xv = 0;
 			final double Yv = k1 * Xv;
@@ -1776,9 +1837,9 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			// ellipseScanLog.addValue("Xv", Xv);
 			// ellipseScanLog.addValue("Yv", Yv);
 
-			final double k2 = -B / A2;
+//			final double k2 = -B / A2;
 			// ellipseScanLog.addValue("k2", k2);
-			double Yh = Math.sqrt(-D / (A * k2 * k2 + B * k2 + C));
+			double Yh = Math.sqrt(-D / abck2);
 			if (Double.isNaN(Yh))
 				Yh = 0;
 			final double Xh = k2 * Yh;
@@ -1786,10 +1847,10 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			// ellipseScanLog.addValue("Xh", Xh);
 			// ellipseScanLog.addValue("Yh", Yh);
 
-			final double k3 = (A2 - B) / (C2 - B);
+//			final double k3 = (A2 - B) / (C2 - B);
 			// ellipseScanLog.addValue("k3", k3);
 			// Xr always positive (to right of origin)
-			double Xr = Math.sqrt(-D / (A + B * k3 + C * k3 * k3));
+			double Xr = Math.sqrt(-D / abck3);
 			if (Double.isNaN(Xr))
 				Xr = 0;
 			double Yr = k3 * Xr;
@@ -1801,10 +1862,10 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			// ellipseScanLog.addValue("Yr", Yr);
 
 			// sometimes k4 evaluates to +ve value, though usually -ve
-			final double k4 = (-A2 - B) / (C2 + B);
+//			final double k4 = (-A2 - B) / (C2 + B);
 			// ellipseScanLog.addValue("k4", k4);
 			// Xl always negative (to left of origin)
-			double Xl = -Math.sqrt(-D / (A + B * k4 + C * k4 * k4));
+			double Xl = -Math.sqrt(-D / abck4 );
 			if (Double.isNaN(Xl))
 				Xl = 0;
 			double Yl = k4 * Xl;
@@ -1835,24 +1896,24 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			double d1 = (A * Xinit * Xinit) + (B * Xinit * Yinit)
 					+ (C * Yinit * Yinit) + D;
 
-			double Fn_n = C2;
-			double Fw_w = A2;
-			double Fs_s = C2;
-			double Fn_nw = C2 - B;
-			double Fnw_n = Fn_nw;
-			double Fw_nw = A2 - B;
-			double Fnw_w = Fw_nw;
-			double Fw_sw = A2 + B;
-			double Fsw_w = Fw_sw;
-			double Fnw_nw = A2 - B2 + C2;
-			double Fsw_sw = A2 + B2 + C2;
-			double Fs_sw = C2 + B;
-			double Fsw_s = Fs_sw;
-
-			final double cross1 = B - A;
-			final double cross2 = A - B + C;
-			final double cross3 = A + B + C;
-			final double cross4 = A + B;
+//			double Fn_n = C2;
+//			double Fw_w = A2;
+//			double Fs_s = C2;
+//			double Fn_nw = C2 - B;
+//			double Fnw_n = Fn_nw;
+//			double Fw_nw = A2 - B;
+//			double Fnw_w = Fw_nw;
+//			double Fw_sw = A2 + B;
+//			double Fsw_w = Fw_sw;
+//			double Fnw_nw = A2 - B2 + C2;
+//			double Fsw_sw = A2 + B2 + C2;
+//			double Fs_sw = C2 + B;
+//			double Fsw_s = Fs_sw;
+//
+//			final double cross1 = B - A;
+//			final double cross2 = A - B + C;
+//			final double cross3 = A + B + C;
+//			final double cross4 = A + B;
 
 			// region 1
 			int ifCount = 0;
