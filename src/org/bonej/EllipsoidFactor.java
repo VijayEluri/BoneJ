@@ -1754,12 +1754,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		final double cross2 = A - B + C;
 		final double cross3 = A + B + C;
 		final double cross4 = A + B;
-
-//		double d = z * ef + eh;
-//		double f = z * eg + ej;
-//		double g = z * (2 * ek + ec * z) - 1;
-		
-		
 		
 		debugLog.incrementCounter();
 		debugLog.addLabel(name);
@@ -1790,15 +1784,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			ellipseLog.addValue("g", ellipse[5]);
 			ellipseLog.show("Ellipse coefficients");
 
-			// translate ellipse to xy origin
-//			final double a = ellipse[0];
-//			final double b = ellipse[1];
-//			final double c = ellipse[2];
-
-			// d and f are used to calculate the translated equation
-//			final double d = ellipse[3];
-//			final double f = ellipse[4];
-//			double g = ellipse[5];
 			final double d = z * ef + eh;
 			final double f = z * eg + ej;
 			double g = z * (2 * ek + ec * z) - 1;
@@ -1812,43 +1797,18 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 			// use variable names same as Da Silva (1989)
 			// http://cs.brown.edu/research/pubs/theses/masters/1989/dasilva.pdf
-//			final double A = -a;
-//			final double B = -b * 2; // da Silva uses the doubled value
-//			final double C = -c;
 			final double D = -g;
-			// ellipseScanLog.addValue("A", A);
-			// ellipseScanLog.addValue("B", B);
-			// ellipseScanLog.addValue("C", C);
-			// ellipseScanLog.addValue("D", D);
-
-//			final double A2 = A + A;
-//			final double B2 = B + B;
-//			final double C2 = C + C;
-//			final double B_2 = B / 2;
-//
-//			final double k1 = -B / C2;
-			// ellipseScanLog.addValue("k1", k1);
 
 			double Xv = Math.sqrt(-D / abck1);
 			if (Double.isNaN(Xv))
 				Xv = 0;
 			final double Yv = k1 * Xv;
 
-			// ellipseScanLog.addValue("Xv", Xv);
-			// ellipseScanLog.addValue("Yv", Yv);
-
-//			final double k2 = -B / A2;
-			// ellipseScanLog.addValue("k2", k2);
 			double Yh = Math.sqrt(-D / abck2);
 			if (Double.isNaN(Yh))
 				Yh = 0;
 			final double Xh = k2 * Yh;
 
-			// ellipseScanLog.addValue("Xh", Xh);
-			// ellipseScanLog.addValue("Yh", Yh);
-
-//			final double k3 = (A2 - B) / (C2 - B);
-			// ellipseScanLog.addValue("k3", k3);
 			// Xr always positive (to right of origin)
 			double Xr = Math.sqrt(-D / abck3);
 			if (Double.isNaN(Xr))
@@ -1857,13 +1817,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			if (Yr < 0)
 				Yr = -Yr;
 
-			// ellipseScanLog.addValue("Yrk1 - Xr", Yr * k1 - Xr);
-			// ellipseScanLog.addValue("Xr", Xr);
-			// ellipseScanLog.addValue("Yr", Yr);
-
-			// sometimes k4 evaluates to +ve value, though usually -ve
-//			final double k4 = (-A2 - B) / (C2 + B);
-			// ellipseScanLog.addValue("k4", k4);
 			// Xl always negative (to left of origin)
 			double Xl = -Math.sqrt(-D / abck4 );
 			if (Double.isNaN(Xl))
@@ -1871,12 +1824,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			double Yl = k4 * Xl;
 			if (Yl < 0)
 				Yl *= -1;
-
-			// ellipseScanLog.addValue("Ylk1 - Xl", Yl * k1 - Xl);
-			// ellipseScanLog.addValue("Xl", Xl);
-			// ellipseScanLog.addValue("Yl", Yl);
-			//
-			// ellipseScanLog.show("Ellipse scan conversion");
 
 			final double XV = Math.round(Xv);
 			double YV = Math.round(Yv);
@@ -1895,25 +1842,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			double Fnw = Fn - A2 * Xinit - B * Yinit + (A - B);
 			double d1 = (A * Xinit * Xinit) + (B * Xinit * Yinit)
 					+ (C * Yinit * Yinit) + D;
-
-//			double Fn_n = C2;
-//			double Fw_w = A2;
-//			double Fs_s = C2;
-//			double Fn_nw = C2 - B;
-//			double Fnw_n = Fn_nw;
-//			double Fw_nw = A2 - B;
-//			double Fnw_w = Fw_nw;
-//			double Fw_sw = A2 + B;
-//			double Fsw_w = Fw_sw;
-//			double Fnw_nw = A2 - B2 + C2;
-//			double Fsw_sw = A2 + B2 + C2;
-//			double Fs_sw = C2 + B;
-//			double Fsw_s = Fs_sw;
-//
-//			final double cross1 = B - A;
-//			final double cross2 = A - B + C;
-//			final double cross3 = A + B + C;
-//			final double cross4 = A + B;
 
 			// region 1
 			int ifCount = 0;
