@@ -1915,10 +1915,10 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		final double Xinit = x - 0.5 * pW;
 		final double Yinit = y + pH;
 
-		double Fn = C2 * Yinit + B * Xinit + C;
-		double Fnw = Fn - A2 * Xinit - B * Yinit + A - B;
-		double d1 = (A * Xinit * Xinit) + (B * Xinit * Yinit)
-				+ (C * Yinit * Yinit) + D;
+		double Fn = C2 * Yinit + B * Xinit + C * pW;
+		double Fnw = Fn - A2 * Xinit - B * Yinit + (A - B) * pW;
+		double d1 = ((A * Xinit * Xinit) + (B * Xinit * Yinit)
+				+ (C * Yinit * Yinit) + D ) * pW;
 
 		double Fn_n = C2;
 		double Fw_w = A2;
@@ -1968,8 +1968,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		// ellipsePixels.add(new double[] { Xr + x0, Yr + y0 }); // ok r1 - r2
 
 		double Fw = Fnw - Fn + A + B + B_2;
-		Fnw += A - C;
-		double d2 = d1 + (Fw - Fn + C) / 2 + (A + C) / 4 - A;
+		Fnw += (A - C) * pW;
+		double d2 = d1 + ((Fw - Fn + C) / 2 + (A + C) / 4 - A)*pW;
 
 		// region2
 		ifCount = 0;
@@ -1980,7 +1980,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			double[] pixelOpp = { -x + x0, -y + y0 };
 			ellipsePixels.add(pixelOpp);
 			x -= pW;
-			if (d2 < 0 || (Fnw - Fw < cross2)) {
+			if (d2 < 0 || (Fnw - Fw) < cross2) {
 				ifCount++;
 				y += pH;
 				d2 += Fnw * pW;
@@ -1997,8 +1997,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 		// ellipsePixels.add(new double[] { Xh + x0, Yh + y0 }); // ok r2 - r3
 
-		double d3 = d2 + Fw - Fnw + C2 - B;
-		Fw += B;
+		double d3 = d2 + (Fw - Fnw + C2 - B)* pW;
+		Fw += B * pW;
 		double Fsw = Fw - Fnw + Fw + C2 + C2 - B;
 
 		// region 3
