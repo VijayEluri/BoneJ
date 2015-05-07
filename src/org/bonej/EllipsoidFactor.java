@@ -38,7 +38,6 @@ import ij.process.ImageProcessor;
 import ij.gui.GenericDialog;
 import ij.gui.Plot;
 import ij.measure.Calibration;
-import ij.measure.ResultsTable;
 //import ij.measure.ResultsTable;
 import ij3d.Image3DUniverse;
 
@@ -106,10 +105,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 	private Image3DUniverse universe;
 
 	private double stackVolume;
-
-	private ResultsTable debugLog;
-
-	private ResultsTable ellipseLog;
 
 	// private ResultsTable ellipseScanLog;
 
@@ -190,9 +185,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		if (IJ.debugMode) {
 			universe = new Image3DUniverse();
 			universe.show();
-			debugLog = new ResultsTable();
-			ellipseLog = new ResultsTable();
-			// ellipseScanLog = new ResultsTable();
 		}
 
 		long start = System.currentTimeMillis();
@@ -1755,34 +1747,9 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		final double cross3 = A + B + C;
 		final double cross4 = A + B;
 		
-		debugLog.incrementCounter();
-		debugLog.addLabel(name);
-		debugLog.addValue("x²", eEq[0]);
-		debugLog.addValue("y²", eEq[1]);
-		debugLog.addValue("z²", eEq[2]);
-		debugLog.addValue("2xy", eEq[3]);
-		debugLog.addValue("2xz", eEq[4]);
-		debugLog.addValue("2yz", eEq[5]);
-		debugLog.addValue("2x", eEq[6]);
-		debugLog.addValue("2y", eEq[7]);
-		debugLog.addValue("2z", eEq[8]);
-		debugLog.show("Ellipsoid equations");
-
 		ArrayList<double[]> ellipsePixels = new ArrayList<double[]>();
 
 		for (double z = zMin; z <= zMax; z += pD / pW) {
-
-			double[] ellipse = getEllipseAtZ(eEq, z);
-
-			ellipseLog.incrementCounter();
-			ellipseLog.addLabel(name);
-			ellipseLog.addValue("x²", ellipse[0]);
-			ellipseLog.addValue("2xy", ellipse[1]);
-			ellipseLog.addValue("y²", ellipse[2]);
-			ellipseLog.addValue("2x", ellipse[3]);
-			ellipseLog.addValue("2y", ellipse[4]);
-			ellipseLog.addValue("g", ellipse[5]);
-			ellipseLog.show("Ellipse coefficients");
 
 			final double d = z * ef + eh;
 			final double f = z * eg + ej;
@@ -1844,81 +1811,63 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 					+ (C * Yinit * Yinit) + D;
 
 			// region 1
-			int ifCount = 0;
-			int elseCount = 0;
 			while (y < YR) {
 				ellipsePixels.add(new double[] { x + x0, y + y0, z });
 				ellipsePixels.add(new double[] { -x + x0, -y + y0, z });
 				y += 1;
 				if (d1 < 0 || (Fn - Fnw) < cross1) {
-					ifCount++;
 					d1 += Fn;
 					Fn += Fn_n;
 					Fnw += Fnw_n;
 				} else {
-					elseCount++;
 					x -= 1;
 					d1 += Fnw;
 					Fn += Fn_nw;
 					Fnw += Fnw_nw;
 				}
 			}
-			IJ.log("region1\nifCount = " + ifCount + ", elseCount = "
-					+ elseCount);
 
 			double Fw = Fnw - Fn + A + B + B_2;
 			Fnw += (A - C);
 			double d2 = d1 + ((Fw - Fn + C) / 2 + (A + C) / 4 - A);
 
 			// region2
-			ifCount = 0;
-			elseCount = 0;
 			while (x > XH) {
 				ellipsePixels.add(new double[] { x + x0, y + y0, z });
 				ellipsePixels.add(new double[] { -x + x0, -y + y0, z });
 				x -= 1;
 				if (d2 < 0 || (Fnw - Fw) < cross2) {
-					ifCount++;
 					y += 1;
 					d2 += Fnw;
 					Fw += Fw_nw;
 					Fnw += Fnw_nw;
 				} else {
-					elseCount++;
 					d2 += Fw;
 					Fw += Fw_w;
 					Fnw += Fnw_w;
 				}
 			}
-			IJ.log("region2\nifCount = " + ifCount + ", elseCount = "
-					+ elseCount);
 
 			double d3 = d2 + (Fw - Fnw + C2 - B);
 			Fw += B;
 			double Fsw = Fw - Fnw + Fw + C2 + C2 - B;
 
 			// region 3
-			ifCount = 0;
-			elseCount = 0;
 			while (x > XL) {
 				ellipsePixels.add(new double[] { x + x0, y + y0, z });
 				ellipsePixels.add(new double[] { -x + x0, -y + y0, z });
 				x -= 1;
 				if (d3 < 0 || Fsw - Fw > cross3) {
-					ifCount++;
 					d3 += Fw;
 					Fw += Fw_w;
 					Fsw += Fsw_w;
 				} else {
-					elseCount++;
 					y -= 1;
 					d3 += Fsw;
 					Fw += Fw_sw;
 					Fsw += Fsw_sw;
 				}
 			}
-			IJ.log("region 3\nifCount = " + ifCount + ", elseCount = "
-					+ elseCount);
 
 			double Fs = Fsw - Fw - B;
 			double d4 = d3 - Fsw / 2 + Fs + A - (A + C - B) / 4;
@@ -1927,27 +1876,22 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			YV = -YV;
 
 			// region 4
-			ifCount = 0;
-			elseCount = 0;
 			while (y > YV) {
 				ellipsePixels.add(new double[] { x + x0, y + y0, z });
 				ellipsePixels.add(new double[] { -x + x0, -y + y0, z });
 				y -= 1;
 				if (d4 < 0 || Fsw - Fs < cross4) {
-					ifCount++;
 					x -= 1;
 					d4 += Fsw;
 					Fs += Fs_sw;
 					Fsw += Fsw_sw;
 				} else {
-					elseCount++;
 					d4 += Fs;
 					Fs += Fs_s;
 					Fsw += Fsw_s;
 				}
 			}
-			IJ.log("region 4\nifCount = " + ifCount + ", elseCount = "
-					+ elseCount);
+
 			ellipsePixels.add(new double[] { x + x0, y + y0, z });
 			ellipsePixels.add(new double[] { -x + x0, -y + y0, z });
 		}
