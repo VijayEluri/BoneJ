@@ -1776,7 +1776,15 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		for (double z = zMin; z <= zMax; z += zInc) {
 
 			int zInt = (int) Math.floor(z / zInc);
-			
+
+			// we haven't got into the image stack yet
+			if (zInt < 0)
+				continue;
+
+			// we are beyond the end of the available pixels
+			if (zInt >= sd)
+				break;
+
 			final byte[] slice = pixels[zInt];
 
 			final double d = z * ef + eh;
@@ -1854,9 +1862,11 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			// region 1
 			while (y < YR) {
 				if (isBackground(x, y, x0, y0, sw, sh, slice))
-					ellipsePixels.add(new double[] { (x + x0) * pW, (y + y0) * pW, z * pW});
+					ellipsePixels.add(new double[] { (x + x0) * pW,
+							(y + y0) * pW, z * pW });
 				if (isBackground(-x, -y, x0, y0, sw, sh, slice))
-					ellipsePixels.add(new double[] { (-x + x0) * pW, (-y + y0) * pW, z * pW});
+					ellipsePixels.add(new double[] { (-x + x0) * pW,
+							(-y + y0) * pW, z * pW });
 				y += 1;
 				if (d1 < 0 || (Fn - Fnw) < cross1) {
 					d1 += Fn;
@@ -1877,9 +1887,11 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			// region2
 			while (x > XH) {
 				if (isBackground(x, y, x0, y0, sw, sh, slice))
-					ellipsePixels.add(new double[] { (x + x0) * pW, (y + y0) * pW, z * pW});
+					ellipsePixels.add(new double[] { (x + x0) * pW,
+							(y + y0) * pW, z * pW });
 				if (isBackground(-x, -y, x0, y0, sw, sh, slice))
-					ellipsePixels.add(new double[] { (-x + x0) * pW, (-y + y0) * pW, z * pW});
+					ellipsePixels.add(new double[] { (-x + x0) * pW,
+							(-y + y0) * pW, z * pW });
 				x -= 1;
 				if (d2 < 0 || (Fnw - Fw) < cross2) {
 					y += 1;
@@ -1900,9 +1912,11 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			// region 3
 			while (x > XL) {
 				if (isBackground(x, y, x0, y0, sw, sh, slice))
-					ellipsePixels.add(new double[] { (x + x0) * pW, (y + y0) * pW, z * pW});
+					ellipsePixels.add(new double[] { (x + x0) * pW,
+							(y + y0) * pW, z * pW });
 				if (isBackground(-x, -y, x0, y0, sw, sh, slice))
-					ellipsePixels.add(new double[] { (-x + x0) * pW, (-y + y0) * pW, z * pW});
+					ellipsePixels.add(new double[] { (-x + x0) * pW,
+							(-y + y0) * pW, z * pW });
 				x -= 1;
 				if (d3 < 0 || Fsw - Fw > cross3) {
 					d3 += Fw;
@@ -1925,9 +1939,11 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			// region 4
 			while (y > minusYV) {
 				if (isBackground(x, y, x0, y0, sw, sh, slice))
-					ellipsePixels.add(new double[] { (x + x0) * pW, (y + y0) * pW, z * pW});
+					ellipsePixels.add(new double[] { (x + x0) * pW,
+							(y + y0) * pW, z * pW });
 				if (isBackground(-x, -y, x0, y0, sw, sh, slice))
-					ellipsePixels.add(new double[] { (-x + x0) * pW, (-y + y0) * pW, z * pW});
+					ellipsePixels.add(new double[] { (-x + x0) * pW,
+							(-y + y0) * pW, z * pW });
 				y -= 1;
 				if (d4 < 0 || Fsw - Fs < cross4) {
 					x -= 1;
@@ -1941,9 +1957,11 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 				}
 			}
 			if (isBackground(x, y, x0, y0, sw, sh, slice))
-				ellipsePixels.add(new double[] { (x + x0) * pW, (y + y0) * pW, z * pW});
+				ellipsePixels.add(new double[] { (x + x0) * pW, (y + y0) * pW,
+						z * pW });
 			if (isBackground(-x, -y, x0, y0, sw, sh, slice))
-				ellipsePixels.add(new double[] { (-x + x0) * pW, (-y + y0) * pW, z * pW});
+				ellipsePixels.add(new double[] { (-x + x0) * pW,
+						(-y + y0) * pW, z * pW });
 		}
 		return ellipsePixels;
 	}
