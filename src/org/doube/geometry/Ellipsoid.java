@@ -286,6 +286,15 @@ public class Ellipsoid {
 	}
 
 	/**
+	 * Scale the ellipsoid by a factor f
+	 * 
+	 * @param f
+	 */
+	public void scale(double f){
+		setRadii(this.ra * f, this.rb * f, this.rc * f);
+	}
+	
+	/**
 	 * Translate the ellipsoid
 	 * 
 	 * @param dx
