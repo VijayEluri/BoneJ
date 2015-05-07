@@ -1749,107 +1749,17 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			g += a * x0 * x0 + 2 * b * x0 * y0 + c * y0 * y0 + 2 * d * x0 + 2
 					* f * y0;
 
-			// following Bond 2002
-			// Ax2 + By2 + 2Cxy + F = 0
-			// final double A = a;
-			// final double B = c;
-			// final double C = b;
-			// final double F = g;
-			// final double xt = -C / Math.sqrt(A);
-			// final double yt = Math.sqrt(A);
-			// final double xtr = (B - C) / Math.sqrt(A + B - 2 * C);
-			// final double ytr = (A - C) / Math.sqrt(A + B + 2 * C);
-			// final double xr = Math.sqrt(B);
-			// final double yr = -C / Math.sqrt(B);
-			// final double xbr = (B + C) / Math.sqrt(A + B + 2 * C);
-			// final double ybr = -(A + C) / Math.sqrt(A + B + 2 * C);
-			// final double xb = C / Math.sqrt(A);
-			// final double yb = -Math.sqrt(A);
-			//
-			// ArrayList<double[]> ellipsePixels = new ArrayList<double[]>();
-			//
-			// ellipsePixels.add(new double[]{xt, yt});
-			// ellipsePixels.add(new double[]{xtr, ytr});
-			// ellipsePixels.add(new double[]{xr, yr});
-			// ellipsePixels.add(new double[]{xbr, ybr});
-			// ellipsePixels.add(new double[]{xb, yb});
-
-			// double x = xt;
-			// double y = yt;
-			//
-			// while (x < xtr) {
-			// double[] pixel = { x + x0, y + y0 };
-			// ellipsePixels.add(pixel);
-			// double[] pixelOpp = { -x + x0, -y + y0 };
-			// ellipsePixels.add(pixelOpp);
-			// double d1 = A * (x + pW) * (x + pW) + B * (y - 0.5 * pH)
-			// * (y - 0.5 * pH) + 2 * C * (x + pW) * (y - 0.5 * pH) + F;
-			// if (d1 <= 0)
-			// x += pW;
-			// else {
-			// x += pW;
-			// y -= pH;
-			// }
-			// }
-
-			// section 1
-			//
-			// double[] dim = FitEllipse.varToDimensions(new double[] { a, 2 *
-			// b, c,
-			// 2 * d, 2 * f, g });
-			// //
-			// IJ.log("dim[0] (x0) = " + dim[0] + ", x0 = " + x0 + "\n"
-			// + "dim[1] (y0) = " + dim[1] + ", y0 = " + y0 + "\n"
-			// + "dim[2] (a') = " + dim[2] + "\n" + "dim[3] (b') = " + dim[3]
-			// + "\n" + "dim[4] (theta) = " + dim[4]);
-			//
-			// final double semiMinor = dim[2] / 2;
-			// final double semiMajor = dim[3] / 2;
-			// final double theta = dim[4];
-
-			// final double acb2 = 4 * a * c - b * b;
-			//
-			// final double q = 64 * g * acb2 - 64
-			// * (a * f * f - b * d * f - c * d * d) / (acb2 * acb2);
-
-			// final double cFocus = Math.sqrt(Math.abs(q)
-			// * Math.sqrt(b * b + (a - c) * (a - c))) / 4;
-			//
-			// final double semiMajor = Math.sqrt(2 * Math.abs(q)
-			// * Math.sqrt(b * b + (a - c) * (a - c)) - 2 * q * (a + c)) / 8;
-
-			// final double aSq = semiMajor * semiMajor;
-
-			// final double semiMinor = Math.sqrt(aSq - cFocus * cFocus);
-
-			// final double cFocus = Math.sqrt(aSq - semiMinor * semiMinor);
-			// final double Xf = cFocus * Math.cos(theta);
-			// final double Yf = cFocus * Math.sin(theta);
-			// double XfSq = Xf * Xf;
-			// double YfSq = Yf * Yf;
-
-			//
-			// // use variable names same as Da Silva (1989)
-			// //
+			// use variable names same as Da Silva (1989)
 			// http://cs.brown.edu/research/pubs/theses/masters/1989/dasilva.pdf
-			// ellipseScanLog.incrementCounter();
-			// ellipseScanLog.addLabel(name);
-			final double A = -a;// * pW;
-			final double B = -b * 2;// * pW; // da Silva uses the doubled
-									// formulation
-			final double C = -c;// * pW;
-			final double D = -g;// * pW;
+			final double A = -a;
+			final double B = -b * 2; // da Silva uses the doubled value
+			final double C = -c;
+			final double D = -g;
 			// ellipseScanLog.addValue("A", A);
 			// ellipseScanLog.addValue("B", B);
 			// ellipseScanLog.addValue("C", C);
 			// ellipseScanLog.addValue("D", D);
 
-			//
-			// final double A = aSq - XfSq;
-			// final double B = -Xf * Yf;
-			// final double C = aSq - YfSq;
-			// final double D = -aSq * semiMinor * semiMinor;
-			//
 			final double A2 = A + A;
 			final double B2 = B + B;
 			final double C2 = C + C;
@@ -1862,7 +1772,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			if (Double.isNaN(Xv))
 				Xv = 0;
 			final double Yv = k1 * Xv;
-			//
+
 			// ellipseScanLog.addValue("Xv", Xv);
 			// ellipseScanLog.addValue("Yv", Yv);
 
@@ -1907,25 +1817,16 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			//
 			// ellipseScanLog.show("Ellipse scan conversion");
 
-			// ellipsePixels.add(new double[] { Xv + x0, Yv + y0 }); // ok r8 -
-			// r1
-
-			// original uses rounded variables due to integer pixel space
-			// here we will stay in real space until doing the pixel lookup
-			// but starting at an integer number of pixels * pixel width (or
-			// height)
-			final double XV = Math.round(Xv);// pW * Math.round(Xv / pW);
-			double YV = Math.round(Yv);// pH * Math.round(Yv / pH);
-			final double YR = Math.round(Yr);// pH * Math.round(Yr / pH);
-			final double XH = Math.round(Xh);// pW * Math.round(Xh / pW);
-			final double XL = Math.round(Xl);// pW * Math.round(Xl / pW);
+			final double XV = Math.round(Xv);
+			double YV = Math.round(Yv);
+			final double YR = Math.round(Yr);
+			final double XH = Math.round(Xh);
+			final double XL = Math.round(Xl);
 
 			// starting position
 			double x = XV;
 			double y = YV;
 
-			// increments need to be in terms of pixel depth and height
-			// because pixels are unlikely to have spacing of 1x1 real units
 			final double Xinit = x - 0.5;
 			final double Yinit = y + 1;
 
@@ -1953,8 +1854,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			final double cross3 = A + B + C;
 			final double cross4 = A + B;
 
-			// ArrayList<double[]> ellipsePixels = new ArrayList<double[]>();
-
 			// region 1
 			int ifCount = 0;
 			int elseCount = 0;
@@ -1977,9 +1876,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			}
 			IJ.log("region1\nifCount = " + ifCount + ", elseCount = "
 					+ elseCount);
-
-			// ellipsePixels.add(new double[] { Xr + x0, Yr + y0 }); // ok r1 -
-			// r2
 
 			double Fw = Fnw - Fn + A + B + B_2;
 			Fnw += (A - C);
@@ -2008,9 +1904,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			IJ.log("region2\nifCount = " + ifCount + ", elseCount = "
 					+ elseCount);
 
-			// ellipsePixels.add(new double[] { Xh + x0, Yh + y0 }); // ok r2 -
-			// r3
-
 			double d3 = d2 + (Fw - Fnw + C2 - B);
 			Fw += B;
 			double Fsw = Fw - Fnw + Fw + C2 + C2 - B;
@@ -2037,8 +1930,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			}
 			IJ.log("region 3\nifCount = " + ifCount + ", elseCount = "
 					+ elseCount);
-			// ellipsePixels.add(new double[] { Xl + x0, Yl + y0 }); // ok r3 -
-			// r4
 
 			double Fs = Fsw - Fw - B;
 			double d4 = d3 - Fsw / 2 + Fs + A - (A + C - B) / 4;
@@ -2068,25 +1959,11 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			}
 			IJ.log("region 4\nifCount = " + ifCount + ", elseCount = "
 					+ elseCount);
-			// ellipsePixels.add(new double[] { -Xv + x0, -Yv + y0 }); // end of
-			// r4
-			// is
-			// (-Xv, -Yv)
-			// ellipsePixels.add(new double[] { -Xr + x0, -Yr + y0 });
-			// ellipsePixels.add(new double[] { -Xh + x0, -Yh + y0 });
-			// ellipsePixels.add(new double[] { -Xl + x0, -Yl + y0 });
-			// ellipsePixels.add(new double[] { Xv + x0, Yv + y0 });
 			ellipsePixels.add(new double[] { x + x0, y + y0, z });
 			ellipsePixels.add(new double[] { -x + x0, -y + y0, z });
 		}
 		return ellipsePixels;
 	}
-
-	// private double dist(double x1, double y1, double x2, double y2) {
-	// final double dx = x1 - x2;
-	// final double dy = y1 - y2;
-	// return Math.sqrt(dx * dx + dy * dy);
-	// }
 
 	private boolean isContained(Ellipsoid ellipsoid, byte[][] pixels,
 			final double pW, final double pH, final double pD, final int w,
