@@ -1791,7 +1791,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			// or we are beyond the end of the available pixels
 			if (zInt < 0 || zInt >= sd)
 				inStackZLimits = false;
-			else{
+			else {
 				inStackZLimits = true;
 				slice = pixels[zInt];
 			}
@@ -1984,20 +1984,26 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			int xPos = centre(x, x0);
 			int yPos = centre(y, y0);
 
-			if (isOutOfBounds(xPos, yPos, sw, sh))
+			if (isOutOfBounds(xPos, yPos, sw, sh)) {
 				nOOBPoints++;
-			else if (isBackground(xPos, yPos, sw, slice))
-				contactPoints.add(new double[] { (x + x0) * pW, (y + y0) * pW,
-						z * pW });
+			} else {
+				if (isBackground(xPos, yPos, sw, slice)) {
+					contactPoints.add(new double[] { (x + x0) * pW,
+							(y + y0) * pW, z * pW });
+				}
+			}
 
 			xPos = centre(-x, x0);
 			yPos = centre(-y, y0);
 
-			if (isOutOfBounds(xPos, yPos, sw, sh))
+			if (isOutOfBounds(xPos, yPos, sw, sh)) {
 				nOOBPoints++;
-			else if (isBackground(xPos, yPos, sw, slice))
-				contactPoints.add(new double[] { (-x + x0) * pW,
-						(-y + y0) * pW, z * pW });
+			} else {
+				if (isBackground(xPos, yPos, sw, slice)) {
+					contactPoints.add(new double[] { (-x + x0) * pW,
+							(-y + y0) * pW, z * pW });
+				}
+			}
 		}
 		return nOOBPoints;
 	}
@@ -2062,9 +2068,9 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 	 */
 	private boolean isOutOfBounds(int x, int y, int w, int h) {
 		if (x < 0 || x >= w || y < 0 || y >= h)
-			return false;
-		else
 			return true;
+		else
+			return false;
 	}
 
 	private int[][] skeletonPoints(ImagePlus imp) {
