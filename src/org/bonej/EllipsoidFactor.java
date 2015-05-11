@@ -1241,11 +1241,15 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		ArrayList<double[]> points = findEllipseContactPoints(ellipsoid, name,
 				pixels, pW, pH, pD, w, h, d);
 
-		for (double[] p : points) {
-			points3D.add(new Point3f((float) p[0], (float) p[1], (float) p[2]));
-		}
+		CustomPointMesh ellipseMesh = null;
+		if (points != null) {
+			for (double[] p : points) {
+				points3D.add(new Point3f((float) p[0], (float) p[1],
+						(float) p[2]));
+			}
 
-		CustomPointMesh ellipseMesh = new CustomPointMesh(points3D);
+			ellipseMesh = new CustomPointMesh(points3D);
+		}
 
 		try {
 			universe.addCustomMesh(mesh, "Point cloud " + name).setLocked(true);
@@ -1255,8 +1259,9 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 					true);
 			universe.addLineMesh(aabb, new Color3f(1.0f, 0.0f, 0.0f),
 					"AABB of " + name, false).setLocked(true);
-			universe.addCustomMesh(ellipseMesh, "Ellipses of " + name)
-					.setLocked(true);
+			if (ellipseMesh != null)
+				universe.addCustomMesh(ellipseMesh, "Ellipses of " + name)
+						.setLocked(true);
 			// universe.addLineMesh(points3D, new Color3f(1.0f, 1.0f, 0.0f),
 			// "Ellipse regions of " + name, true).setLocked(true);
 
@@ -1770,22 +1775,26 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		final double cross3 = A + B + C;
 		final double cross4 = A + B;
 
-		ArrayList<double[]> ellipsePixels = new ArrayList<double[]>();
+		ArrayList<double[]> contactPoints = new ArrayList<double[]>();
+
+		int nPoints = 0;
+		int nOOBPoints = 0;
+		boolean inStackZLimits = true;
 
 		// z has to be stepped in xy plane pixel units
 		for (double z = zMin; z <= zMax; z += zInc) {
 
 			int zInt = (int) Math.floor(z / zInc);
 
+			byte[] slice = null;
 			// we haven't got into the image stack yet
-			if (zInt < 0)
-				continue;
-
-			// we are beyond the end of the available pixels
-			if (zInt >= sd)
-				break;
-
-			final byte[] slice = pixels[zInt];
+			// or we are beyond the end of the available pixels
+			if (zInt < 0 || zInt >= sd)
+				inStackZLimits = false;
+			else{
+				inStackZLimits = true;
+				slice = pixels[zInt];
+			}
 
 			final double d = z * ef + eh;
 			final double f = z * eg + ej;
@@ -1861,13 +1870,12 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 			// region 1
 			while (y < YR) {
-				if (isBackground(x, y, x0, y0, sw, sh, slice))
-					ellipsePixels.add(new double[] { (x + x0) * pW,
-							(y + y0) * pW, z * pW });
-				if (isBackground(-x, -y, x0, y0, sw, sh, slice))
-					ellipsePixels.add(new double[] { (-x + x0) * pW,
-							(-y + y0) * pW, z * pW });
+
+				nOOBPoints += updateContactPixelList(contactPoints,
+						inStackZLimits, x, y, z, x0, y0, pW, sw, sh, slice);
+
 				y += 1;
+				nPoints += 2;
 				if (d1 < 0 || (Fn - Fnw) < cross1) {
 					d1 += Fn;
 					Fn += Fn_n;
@@ -1886,13 +1894,12 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 			// region2
 			while (x > XH) {
-				if (isBackground(x, y, x0, y0, sw, sh, slice))
-					ellipsePixels.add(new double[] { (x + x0) * pW,
-							(y + y0) * pW, z * pW });
-				if (isBackground(-x, -y, x0, y0, sw, sh, slice))
-					ellipsePixels.add(new double[] { (-x + x0) * pW,
-							(-y + y0) * pW, z * pW });
+
+				nOOBPoints += updateContactPixelList(contactPoints,
+						inStackZLimits, x, y, z, x0, y0, pW, sw, sh, slice);
+
 				x -= 1;
+				nPoints += 2;
 				if (d2 < 0 || (Fnw - Fw) < cross2) {
 					y += 1;
 					d2 += Fnw;
@@ -1911,13 +1918,12 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 			// region 3
 			while (x > XL) {
-				if (isBackground(x, y, x0, y0, sw, sh, slice))
-					ellipsePixels.add(new double[] { (x + x0) * pW,
-							(y + y0) * pW, z * pW });
-				if (isBackground(-x, -y, x0, y0, sw, sh, slice))
-					ellipsePixels.add(new double[] { (-x + x0) * pW,
-							(-y + y0) * pW, z * pW });
+
+				nOOBPoints += updateContactPixelList(contactPoints,
+						inStackZLimits, x, y, z, x0, y0, pW, sw, sh, slice);
+
 				x -= 1;
+				nPoints += 2;
 				if (d3 < 0 || Fsw - Fw > cross3) {
 					d3 += Fw;
 					Fw += Fw_w;
@@ -1938,13 +1944,12 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 			// region 4
 			while (y > minusYV) {
-				if (isBackground(x, y, x0, y0, sw, sh, slice))
-					ellipsePixels.add(new double[] { (x + x0) * pW,
-							(y + y0) * pW, z * pW });
-				if (isBackground(-x, -y, x0, y0, sw, sh, slice))
-					ellipsePixels.add(new double[] { (-x + x0) * pW,
-							(-y + y0) * pW, z * pW });
+
+				nOOBPoints += updateContactPixelList(contactPoints,
+						inStackZLimits, x, y, z, x0, y0, pW, sw, sh, slice);
+
 				y -= 1;
+				nPoints += 2;
 				if (d4 < 0 || Fsw - Fs < cross4) {
 					x -= 1;
 					d4 += Fsw;
@@ -1956,26 +1961,60 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 					Fsw += Fsw_s;
 				}
 			}
-			if (isBackground(x, y, x0, y0, sw, sh, slice))
-				ellipsePixels.add(new double[] { (x + x0) * pW, (y + y0) * pW,
-						z * pW });
-			if (isBackground(-x, -y, x0, y0, sw, sh, slice))
-				ellipsePixels.add(new double[] { (-x + x0) * pW,
-						(-y + y0) * pW, z * pW });
+
+			nOOBPoints += updateContactPixelList(contactPoints, inStackZLimits,
+					x, y, z, x0, y0, pW, sw, sh, slice);
+
+			nPoints += 2;
 		}
-		return ellipsePixels;
+
+		if (nOOBPoints / nPoints > 0.5)
+			return null;
+
+		return contactPoints;
 	}
 
-	private boolean isBackground(double x, double y, double x0, double y0,
-			int w, int h, byte[] slice) {
+	private int updateContactPixelList(ArrayList<double[]> contactPoints,
+			boolean inStackZLimits, double x, double y, double z, double x0,
+			double y0, double pW, int sw, int sh, byte[] slice) {
+		int nOOBPoints = 0;
+		if (!inStackZLimits) {
+			nOOBPoints += 2;
+		} else {
+			int xPos = centre(x, x0);
+			int yPos = centre(y, y0);
 
-		final int xPos = (int) Math.floor(x + x0);
-		final int yPos = (int) Math.floor(y + y0);
+			if (isOutOfBounds(xPos, yPos, sw, sh))
+				nOOBPoints++;
+			else if (isBackground(xPos, yPos, sw, slice))
+				contactPoints.add(new double[] { (x + x0) * pW, (y + y0) * pW,
+						z * pW });
 
-		if (xPos < 0 || xPos >= w || yPos < 0 || yPos > h)
-			return false;
+			xPos = centre(-x, x0);
+			yPos = centre(-y, y0);
 
-		return (slice[yPos * w + xPos] != -1);
+			if (isOutOfBounds(xPos, yPos, sw, sh))
+				nOOBPoints++;
+			else if (isBackground(xPos, yPos, sw, slice))
+				contactPoints.add(new double[] { (-x + x0) * pW,
+						(-y + y0) * pW, z * pW });
+		}
+		return nOOBPoints;
+	}
+
+	/**
+	 * move a coordinate to the centre and convert to int
+	 * 
+	 * @param x
+	 * @param x0
+	 * @return
+	 */
+	private int centre(double x, double x0) {
+		return (int) Math.floor(x + x0);
+	}
+
+	private boolean isBackground(int x, int y, int w, byte[] slice) {
+		return (slice[y * w + x] != -1);
 	}
 
 	private boolean isContained(Ellipsoid ellipsoid, byte[][] pixels,
@@ -1995,7 +2034,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 	}
 
 	/**
-	 * return true if pixel coordinate is out of image bounds
+	 * return true if 3D pixel coordinate is out of image bounds
 	 * 
 	 * @param x
 	 * @param y
@@ -2010,6 +2049,22 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			return true;
 		else
 			return false;
+	}
+
+	/**
+	 * return true if 2D (x,y) pixel coordinate is out of image bounds
+	 * 
+	 * @param x
+	 * @param y
+	 * @param w
+	 * @param h
+	 * @return
+	 */
+	private boolean isOutOfBounds(int x, int y, int w, int h) {
+		if (x < 0 || x >= w || y < 0 || y >= h)
+			return false;
+		else
+			return true;
 	}
 
 	private int[][] skeletonPoints(ImagePlus imp) {
