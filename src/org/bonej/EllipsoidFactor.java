@@ -1974,9 +1974,39 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		return contactPoints;
 	}
 
+	/**
+	 * Check pixels at (x,y) and (-x, -y) and add it to the list of contact
+	 * points if it is background. If it is out of bounds add it to the out of
+	 * bounds counter
+	 * 
+	 * @param contactPoints
+	 *            list of contact points, added if point is background and not
+	 *            out of bounds
+	 * @param inStackZLimits
+	 *            false if out of bounds in z direction
+	 * @param x
+	 *            pixel coordinate
+	 * @param y
+	 *            pixel coordinate
+	 * @param z
+	 *            coordinate (in pixel units)
+	 * @param x0
+	 *            centre offset
+	 * @param y0
+	 *            centre offset
+	 * @param pW
+	 *            pixel width (in real units)
+	 * @param w
+	 *            stack width (in pixels)
+	 * @param h
+	 *            stack height (in pixels)
+	 * @param slice
+	 *            pixel data array
+	 * @return number of out of bounds pixels
+	 */
 	private int updateContactPixelList(ArrayList<double[]> contactPoints,
 			boolean inStackZLimits, double x, double y, double z, double x0,
-			double y0, double pW, int sw, int sh, byte[] slice) {
+			double y0, double pW, int w, int h, byte[] slice) {
 		int nOOBPoints = 0;
 		if (!inStackZLimits) {
 			nOOBPoints += 2;
@@ -1984,10 +2014,10 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			int xPos = centre(x, x0);
 			int yPos = centre(y, y0);
 
-			if (isOutOfBounds(xPos, yPos, sw, sh)) {
+			if (isOutOfBounds(xPos, yPos, w, h)) {
 				nOOBPoints++;
 			} else {
-				if (isBackground(xPos, yPos, sw, slice)) {
+				if (isBackground(xPos, yPos, w, slice)) {
 					contactPoints.add(new double[] { (x + x0) * pW,
 							(y + y0) * pW, z * pW });
 				}
@@ -1996,10 +2026,10 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			xPos = centre(-x, x0);
 			yPos = centre(-y, y0);
 
-			if (isOutOfBounds(xPos, yPos, sw, sh)) {
+			if (isOutOfBounds(xPos, yPos, w, h)) {
 				nOOBPoints++;
 			} else {
-				if (isBackground(xPos, yPos, sw, slice)) {
+				if (isBackground(xPos, yPos, w, slice)) {
 					contactPoints.add(new double[] { (-x + x0) * pW,
 							(-y + y0) * pW, z * pW });
 				}
