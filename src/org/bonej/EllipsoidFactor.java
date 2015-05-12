@@ -2021,6 +2021,9 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			nPoints += 2;
 		}
 
+		if (nPoints == 0)
+			return contactPoints;
+		
 		if (nOOBPoints / nPoints > 0.5)
 			return null;
 
