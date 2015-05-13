@@ -963,6 +963,9 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			// rotate a little bit
 			ellipsoid = wiggle(ellipsoid);
 
+			contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH,
+					pD, w, h, d);
+			
 			// contract until no contact
 			ellipsoid = shrinkToFit(ellipsoid, contactPoints, pixels, pW, pH,
 					pD, w, h, d);
@@ -981,15 +984,15 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 			if (ellipsoid.getVolume() > maximal.getVolume())
 				maximal = ellipsoid.copy();
-
-			// bump a little away from the sides
-			contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH,
-					pD, w, h, d);
+			
 			if (contactPoints.size() > 0)
 				ellipsoid = bump(ellipsoid, contactPoints, px, py, pz);
 			// if can't bump then do a wiggle
 			else
 				ellipsoid = wiggle(ellipsoid);
+			
+			//update the contact points
+			contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH, pD, w, h, d);
 
 			// contract
 			ellipsoid = shrinkToFit(ellipsoid, contactPoints, pixels, pW, pH,
@@ -1014,6 +1017,9 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			ellipsoid = turn(ellipsoid, contactPoints, 0.1, pixels, pW, pH, pD,
 					w, h, d);
 
+			//update the contact points
+			contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH, pD, w, h, d);
+			
 			// contract until no contact
 			ellipsoid = shrinkToFit(ellipsoid, contactPoints, pixels, pW, pH,
 					pD, w, h, d);
@@ -1423,16 +1429,20 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		double[][] unitVectors = findContactUnitVectors(ellipsoid,
 				contactPoints);
 
+		// contract by fraction proportional to size of ellipsoid
+		final double f = Math.max(1 - vectorIncrement / ellipsoid.getSortedRadii()[2], 0.5);
+		
 		// contract until no contact
 		int safety = 0;
 		while (contactPoints.size() > 0 && safety < maxIterations) {
-			ellipsoid.contract(0.01);
+
+			ellipsoid.scale(f);
 			contactPoints = findContactPoints(ellipsoid, contactPoints,
 					unitVectors, pixels, pW, pH, pD, w, h, d);
 			safety++;
 		}
 
-		ellipsoid.contract(0.05);
+		ellipsoid.scale(0.95);
 
 		return ellipsoid;
 	}
