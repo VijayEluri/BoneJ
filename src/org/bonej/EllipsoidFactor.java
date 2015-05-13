@@ -859,16 +859,13 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		final double pD = cal.pixelDepth;
 
 		ImageStack stack = imp.getImageStack();
-		// final int stackSize = stack.getSize();
 		final int w = stack.getWidth();
 		final int h = stack.getHeight();
 		final int d = stack.getSize();
 
 		// cache slices into an array
-		// ByteProcessor[] ips = new ByteProcessor[stackSize + 1];
 		byte[][] pixels = new byte[d][w * h];
 		for (int i = 0; i < d; i++) {
-			// ips[i] = (ByteProcessor) stack.getProcessor(i);
 			pixels[i] = (byte[]) stack.getProcessor(i + 1).getPixels();
 		}
 
@@ -900,9 +897,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		ArrayList<double[]> contactPoints = new ArrayList<double[]>();
 
 		// get the points of contact
-		// contactPoints = findContactPoints(ellipsoid, contactPoints, pixels,
-		// pW,
-		// pH, pD, w, h, d);
 		contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH, pD,
 				w, h, d);
 
@@ -914,7 +908,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 		// find the mean unit vector pointing to the points of contact from the
 		// centre
-		double[] shortAxis = contactPointUnitVector(ellipsoid, contactPoints);
+		double[] shortAxis = contactPointMeanUnitVector(ellipsoid, contactPoints);
 
 		// find an orthogonal axis
 		final double[] xAxis = { 1, 0, 0 };
@@ -938,12 +932,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		// dilate other two axes until number of contact points increases
 		// by contactSensitivity number of contacts
 
-		// int maxContacts = contactPoints.size() + contactSensitivity;
 		while (contactPoints.size() < contactSensitivity) {
 			ellipsoid.dilate(0, vectorIncrement, vectorIncrement);
-			// contactPoints = findContactPoints(ellipsoid, contactPoints,
-			// pixels,
-			// pW, pH, pD, w, h, d);
 			contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH,
 					pD, w, h, d);
 			if (isInvalid(ellipsoid, contactPoints)) {
@@ -992,9 +982,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 				maximal = ellipsoid.copy();
 
 			// bump a little away from the sides
-			// contactPoints = findContactPoints(ellipsoid, contactPoints,
-			// pixels,
-			// pW, pH, pD, w, h, d);
 			contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH,
 					pD, w, h, d);
 			if (contactPoints.size() > 0)
@@ -1072,17 +1059,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 					+ totalIterations + " iterations");
 			return null;
 		}
-		// debug output for this ellipsoid
-		if (IJ.debugMode) {
-			// show in the 3D viewer
-			display3D(ellipsoid, contactPoints, pixels, pW, pH, pD, w, h, d,
-					px, py, pz);
-
-			// add history to the ResultsTable
-			// for (int i = 0; i < volumeHistory.size(); i++) {
-			// rt.setValue("" + index, i, volumeHistory.get(i));
-			// }
-		}
 
 		long stop = System.currentTimeMillis();
 
@@ -1090,6 +1066,13 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 				+ totalIterations + " iterations ("
 				+ IJ.d2s((double) (stop - start) / totalIterations, 3)
 				+ " ms/iteration)");
+
+		// debug output for this ellipsoid
+		if (IJ.debugMode) {
+			// show in the 3D viewer
+			display3D(ellipsoid, contactPoints, pixels, pW, pH, pD, w, h, d,
+					px, py, pz);
+		}
 
 		return ellipsoid;
 	}
@@ -1124,17 +1107,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 	private boolean isInvalid(Ellipsoid ellipsoid,
 			ArrayList<double[]> contactPoints) {
 
-		// double[][] surfacePoints = ellipsoid.getSurfacePoints(nVectors);
-		// int outOfBoundsCount = 0;
-		// final int half = nVectors / 2;
-		// for (double[] p : surfacePoints) {
-		// if (isOutOfBounds((int) (p[0] / pW), (int) (p[1] / pD),
-		// (int) (p[2] / pH), w, h, d))
-		// outOfBoundsCount++;
-		// if (outOfBoundsCount > half)
-		// return true;
-		// }
-
 		if (ellipsoid == null || contactPoints == null)
 			return true;
 
@@ -1164,9 +1136,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			ArrayList<double[]> contactPoints, byte[][] pixels, double pW,
 			double pH, double pD, int w, int h, int d, double px, double py,
 			double pz) {
-		// contactPoints = findContactPoints(ellipsoid, contactPoints, pixels,
-		// pW,
-		// pH, pD, w, h, d);
 
 		contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH, pD,
 				w, h, d);
@@ -1284,8 +1253,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			if (ellipseMesh != null)
 				universe.addCustomMesh(ellipseMesh, "Ellipses of " + name)
 						.setLocked(true);
-			// universe.addLineMesh(points3D, new Color3f(1.0f, 1.0f, 0.0f),
-			// "Ellipse regions of " + name, true).setLocked(true);
 
 		} catch (Exception e) {
 			IJ.log("Something went wrong adding meshes to 3D viewer:\n"
@@ -1313,13 +1280,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			ArrayList<double[]> contactPoints, double theta, byte[][] pixels,
 			double pW, double pH, double pD, int w, int h, int d) {
 
-		// contactPoints = findContactPoints(ellipsoid, contactPoints, pixels,
-		// pW,
-		// pH, pD, w, h, d);
-
-//		contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH, pD,
-//				w, h, d);
-
 		if (contactPoints == null)
 			return null;
 
@@ -1328,38 +1288,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			ellipsoid = rotateAboutAxis(ellipsoid, Vectors.norm(torque), theta);
 		}
 		return ellipsoid;
-	}
-
-	/**
-	 * Calculate the mean unit vector between the ellipsoid's centroid and
-	 * contact points
-	 * 
-	 * @param ellipsoid
-	 * @param contactPoints
-	 * @return
-	 */
-	private double[] contactPointUnitVector(Ellipsoid ellipsoid,
-			ArrayList<double[]> contactPoints) {
-		if (contactPoints.size() < 1)
-			throw new IllegalArgumentException(
-					"Need at least one contact point");
-		double[] summedVector = new double[3];
-		final double[] c = ellipsoid.getCentre();
-		for (double[] p : contactPoints) {
-			final double l = Trig.distance3D(p, c);
-			double[] unitVector = { (p[0] - c[0]) / l, (p[1] - c[1]) / l,
-					(p[2] - c[2]) / l };
-			summedVector[0] += unitVector[0];
-			summedVector[1] += unitVector[1];
-			summedVector[2] += unitVector[2];
-		}
-		double[] unitVector = new double[3];
-		unitVector[0] = summedVector[0] / contactPoints.size();
-		unitVector[1] = summedVector[1] / contactPoints.size();
-		unitVector[2] = summedVector[2] / contactPoints.size();
-
-		unitVector = Vectors.norm(unitVector);
-		return unitVector;
 	}
 
 	/**
@@ -1487,13 +1415,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			ArrayList<double[]> contactPoints, byte[][] pixels, double pW,
 			double pH, double pD, int w, int h, int d) {
 
-		// get the contact points
-		// contactPoints = findContactPoints(ellipsoid, contactPoints, pixels,
-		// pW,
-		// pH, pD, w, h, d);
-//		contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH, pD,
-//				w, h, d);
-
 		if (contactPoints == null)
 			return null;
 
@@ -1507,11 +1428,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			ellipsoid.contract(0.01);
 			contactPoints = findContactPoints(ellipsoid, contactPoints,
 					unitVectors, pixels, pW, pH, pD, w, h, d);
-			// contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW,
-			// pH,
-			// pD, w, h, d);
-			// if (contactPoints == null)
-			// return null;
 			safety++;
 		}
 
@@ -1520,6 +1436,45 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		return ellipsoid;
 	}
 
+	/**
+	 * Calculate the mean unit vector between the ellipsoid's centroid and
+	 * contact points
+	 * 
+	 * @param ellipsoid
+	 * @param contactPoints
+	 * @return
+	 */
+	private double[] contactPointMeanUnitVector(Ellipsoid ellipsoid,
+			ArrayList<double[]> contactPoints) {
+		if (contactPoints.size() < 1)
+			throw new IllegalArgumentException(
+					"Need at least one contact point");
+		double[] summedVector = new double[3];
+		final double[] c = ellipsoid.getCentre();
+		for (double[] p : contactPoints) {
+			final double l = Trig.distance3D(p, c);
+			double[] unitVector = { (p[0] - c[0]) / l, (p[1] - c[1]) / l,
+					(p[2] - c[2]) / l };
+			summedVector[0] += unitVector[0];
+			summedVector[1] += unitVector[1];
+			summedVector[2] += unitVector[2];
+		}
+		double[] unitVector = new double[3];
+		unitVector[0] = summedVector[0] / contactPoints.size();
+		unitVector[1] = summedVector[1] / contactPoints.size();
+		unitVector[2] = summedVector[2] / contactPoints.size();
+
+		unitVector = Vectors.norm(unitVector);
+		return unitVector;
+	}
+
+	/**
+	 * Calculate the unit vectors between the centre and contact points
+	 * 
+	 * @param ellipsoid
+	 * @param contactPoints
+	 * @return
+	 */
 	private double[][] findContactUnitVectors(Ellipsoid ellipsoid,
 			ArrayList<double[]> contactPoints) {
 		double[][] unitVectors = new double[contactPoints.size()][3];
@@ -1567,13 +1522,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			byte[][] pixels, double pW, double pH, double pD, int w, int h,
 			int d, double px, double py, double pz) {
 
-		// contactPoints = findContactPoints(ellipsoid, contactPoints, pixels,
-		// pW,
-		// pH, pD, w, h, d);
-
-		contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH, pD,
-				w, h, d);
-
 		if (contactPoints == null)
 			return null;
 
@@ -1585,9 +1533,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		while (contactPoints.size() < contactSensitivity
 				&& safety < maxIterations) {
 			ellipsoid.dilate(av, bv, cv);
-			// contactPoints = findContactPoints(ellipsoid, contactPoints,
-			// pixels,
-			// pW, pH, pD, w, h, d);
+
 			contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH,
 					pD, w, h, d);
 			if (contactPoints == null)
@@ -1613,7 +1559,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		final double displacement = vectorIncrement / 2;
 
 		final double[] c = ellipsoid.getCentre();
-		final double[] vector = contactPointUnitVector(ellipsoid, contactPoints);
+		final double[] vector = contactPointMeanUnitVector(ellipsoid, contactPoints);
 		final double x = c[0] + vector[0] * displacement;
 		final double y = c[1] + vector[1] * displacement;
 		final double z = c[2] + vector[2] * displacement;
@@ -1669,14 +1615,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		return Math.random() * (a + a) - a;
 	}
 
-//	private ArrayList<double[]> findContactPoints(Ellipsoid ellipsoid,
-//			ArrayList<double[]> contactPoints, byte[][] pixels,
-//			final double pW, final double pH, final double pD, final int w,
-//			final int h, final int d) {
-//		final double[][] unitVectors = Vectors.regularVectors(nVectors);
-//		return findContactPoints(ellipsoid, contactPoints, unitVectors, pixels,
-//				pW, pH, pD, w, h, d);
-//	}
 
 	private ArrayList<double[]> findContactPoints(Ellipsoid ellipsoid,
 			ArrayList<double[]> contactPoints, double[][] unitVectors,
@@ -2023,7 +1961,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 		if (nPoints == 0)
 			return contactPoints;
-		
+
 		if (nOOBPoints / nPoints > 0.5)
 			return null;
 
@@ -2119,17 +2057,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		if (contactPoints == null || contactPoints.size() > 0)
 			return false;
 
-		//
-		// double[][] points = ellipsoid.getSurfacePoints(nVectors);
-		// for (double[] p : points) {
-		// final int x = (int) Math.floor(p[0] / pW);
-		// final int y = (int) Math.floor(p[1] / pH);
-		// final int z = (int) Math.floor(p[2] / pD);
-		// if (isOutOfBounds(x, y, z, w, h, d))
-		// continue;
-		// if (pixels[z][y * w + x] != -1)
-		// return false;
-		// }
 		return true;
 	}
 
