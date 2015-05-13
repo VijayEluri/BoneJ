@@ -251,7 +251,8 @@ public class Ellipsoid {
 	 * @param increment
 	 */
 	public void dilate(double increment) {
-		dilate(this.ra * increment, this.rb * increment, this.rc * increment);
+		setRadii(this.ra + this.ra * increment, this.rb + this.rb * increment,
+				this.rc + this.rc * increment);
 	}
 
 	/**
@@ -290,10 +291,10 @@ public class Ellipsoid {
 	 * 
 	 * @param f
 	 */
-	public void scale(double f){
+	public void scale(double f) {
 		setRadii(this.ra * f, this.rb * f, this.rc * f);
 	}
-	
+
 	/**
 	 * Translate the ellipsoid
 	 * 
