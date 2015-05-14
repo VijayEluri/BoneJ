@@ -1548,16 +1548,17 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		final double cy = c[1];
 		final double cz = c[2];
 
+		double[] p = new double[3];
 		for (int i = 0; i < contactPoints.size(); i++) {
-			double[] p = contactPoints.get(i);
-			final double px = p[0];
-			final double py = p[1];
-			final double pz = p[2];
+			p = contactPoints.get(i);
+			final double pxcx = p[0] - cx;
+			final double pycy = p[1] - cy;
+			final double pzcz = p[2] - cz;
 
-			final double l = Trig.distance3D(px, py, pz, cx, cy, cz);
-			final double x = (px - cx) / l;
-			final double y = (py - cy) / l;
-			final double z = (pz - cz) / l;
+			final double l = Trig.distance3D(pxcx, pycy, pzcz);
+			final double x = pxcx / l;
+			final double y = pycy / l;
+			final double z = pzcz / l;
 			double[] u = { x, y, z };
 			unitVectors[i] = u;
 		}
