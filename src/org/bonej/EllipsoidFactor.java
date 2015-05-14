@@ -1330,11 +1330,11 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		// pW,
 		// pH, pD, w, h, d);
 
-		contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH, pD,
-				w, h, d);
+//		contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH, pD,
+//				w, h, d);
 
-		if (contactPoints == null)
-			return null;
+//		if (contactPoints == null)
+//			return null;
 
 		if (contactPoints.size() > 0) {
 			double[] torque = calculateTorque(ellipsoid, contactPoints);
