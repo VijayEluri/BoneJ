@@ -110,6 +110,31 @@ public class ImageCheck {
 	}
 
 	/**
+	 * Check if the x/y pixel spacing is isotropic
+	 * 
+	 * @param imp
+	 *            input image
+	 * @param tolerance
+	 * @return false if x and y pixel spacing are unequal
+	 */
+	public boolean isIsotropicInXY(ImagePlus imp, double tolerance) {
+		if (imp == null) {
+			IJ.noImage();
+			return false;
+		}
+		Calibration cal = imp.getCalibration();
+		final double vW = cal.pixelWidth;
+		final double vH = cal.pixelHeight;
+		final double tLow = 1 - tolerance;
+		final double tHigh = 1 + tolerance;
+
+		if (vW < vH * tLow || vW > vH * tHigh)
+			return false;
+
+		return true;
+	}
+
+	/**
 	 * Check that the voxel thickness is correct
 	 * 
 	 * @param imp
