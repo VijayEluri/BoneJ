@@ -120,10 +120,9 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			return;
 		}
 		ImageCheck ic = new ImageCheck();
-		if (!ic.isBinary(imp) || !ic.isMultiSlice(imp)) {// ||
-															// !ic.isVoxelIsotropic(imp,
-															// 0.001)) {
-			IJ.error("8-bit binary stack required.");
+		if (!ic.isBinary(imp) || !ic.isMultiSlice(imp)
+				|| !ic.isIsotropicInXY(imp, 0.001)) {
+			IJ.error("8-bit binary stack with isotropic pixel spacing in (x,y) required.");
 			return;
 		}
 		Calibration cal = imp.getCalibration();
@@ -968,105 +967,106 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		int totalIterations = 0;
 		int noImprovementCount = 0;
 		final int absoluteMaxIterations = maxIterations * 10;
-		
-		try{
-		while (totalIterations < absoluteMaxIterations
-				&& noImprovementCount < maxIterations) {
 
-			// rotate a little bit
-			ellipsoid = wiggle(ellipsoid);
+		try {
+			while (totalIterations < absoluteMaxIterations
+					&& noImprovementCount < maxIterations) {
 
-			// contract until no contact
-			ellipsoid = shrinkToFit(ellipsoid, contactPoints, pixels, pW, pH,
-					pD, w, h, d);
-
-			// dilate an axis
-			double[] abc = threeWayShuffle();
-			ellipsoid = inflateToFit(ellipsoid, contactPoints, abc[0], abc[1],
-					abc[2], pixels, pW, pH, pD, w, h, d, px, py, pz);
-
-			if (isInvalid(ellipsoid, contactPoints)) {
-				IJ.log("Ellipsoid at (" + px + ", " + py + ", " + pz
-						+ ") is invalid, nullifying after " + totalIterations
-						+ " iterations");
-				return null;
-			}
-
-			if (ellipsoid.getVolume() > maximal.getVolume())
-				maximal = ellipsoid.copy();
-
-			// bump a little away from the sides
-			// contactPoints = findContactPoints(ellipsoid, contactPoints,
-			// pixels,
-			// pW, pH, pD, w, h, d);
-			contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH,
-					pD, w, h, d);
-			if (contactPoints.size() > 0)
-				ellipsoid = bump(ellipsoid, contactPoints, px, py, pz);
-			// if can't bump then do a wiggle
-			else
+				// rotate a little bit
 				ellipsoid = wiggle(ellipsoid);
 
-			// contract
-			ellipsoid = shrinkToFit(ellipsoid, contactPoints, pixels, pW, pH,
-					pD, w, h, d);
+				// contract until no contact
+				ellipsoid = shrinkToFit(ellipsoid, contactPoints, pixels, pW,
+						pH, pD, w, h, d);
 
-			// dilate an axis
-			abc = threeWayShuffle();
-			ellipsoid = inflateToFit(ellipsoid, contactPoints, abc[0], abc[1],
-					abc[2], pixels, pW, pH, pD, w, h, d, px, py, pz);
+				// dilate an axis
+				double[] abc = threeWayShuffle();
+				ellipsoid = inflateToFit(ellipsoid, contactPoints, abc[0],
+						abc[1], abc[2], pixels, pW, pH, pD, w, h, d, px, py, pz);
 
-			if (isInvalid(ellipsoid, contactPoints)) {
-				IJ.log("Ellipsoid at (" + px + ", " + py + ", " + pz
-						+ ") is invalid, nullifying after " + totalIterations
-						+ " iterations");
-				return null;
+				if (isInvalid(ellipsoid, contactPoints)) {
+					IJ.log("Ellipsoid at (" + px + ", " + py + ", " + pz
+							+ ") is invalid, nullifying after "
+							+ totalIterations + " iterations");
+					return null;
+				}
+
+				if (ellipsoid.getVolume() > maximal.getVolume())
+					maximal = ellipsoid.copy();
+
+				// bump a little away from the sides
+				// contactPoints = findContactPoints(ellipsoid, contactPoints,
+				// pixels,
+				// pW, pH, pD, w, h, d);
+				contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW,
+						pH, pD, w, h, d);
+				if (contactPoints.size() > 0)
+					ellipsoid = bump(ellipsoid, contactPoints, px, py, pz);
+				// if can't bump then do a wiggle
+				else
+					ellipsoid = wiggle(ellipsoid);
+
+				// contract
+				ellipsoid = shrinkToFit(ellipsoid, contactPoints, pixels, pW,
+						pH, pD, w, h, d);
+
+				// dilate an axis
+				abc = threeWayShuffle();
+				ellipsoid = inflateToFit(ellipsoid, contactPoints, abc[0],
+						abc[1], abc[2], pixels, pW, pH, pD, w, h, d, px, py, pz);
+
+				if (isInvalid(ellipsoid, contactPoints)) {
+					IJ.log("Ellipsoid at (" + px + ", " + py + ", " + pz
+							+ ") is invalid, nullifying after "
+							+ totalIterations + " iterations");
+					return null;
+				}
+
+				if (ellipsoid.getVolume() > maximal.getVolume())
+					maximal = ellipsoid.copy();
+
+				// rotate a little bit
+				ellipsoid = turn(ellipsoid, contactPoints, 0.1, pixels, pW, pH,
+						pD, w, h, d);
+
+				// contract until no contact
+				ellipsoid = shrinkToFit(ellipsoid, contactPoints, pixels, pW,
+						pH, pD, w, h, d);
+
+				// dilate an axis
+				abc = threeWayShuffle();
+				ellipsoid = inflateToFit(ellipsoid, contactPoints, abc[0],
+						abc[1], abc[2], pixels, pW, pH, pD, w, h, d, px, py, pz);
+
+				if (isInvalid(ellipsoid, contactPoints)) {
+					IJ.log("Ellipsoid at (" + px + ", " + py + ", " + pz
+							+ ") is invalid, nullifying after "
+							+ totalIterations + " iterations");
+					return null;
+				}
+
+				if (ellipsoid.getVolume() > maximal.getVolume())
+					maximal = ellipsoid.copy();
+
+				// keep the maximal ellipsoid found
+				ellipsoid = maximal.copy();
+				// log its volume
+				volumeHistory.add(ellipsoid.getVolume());
+
+				// if the last value is bigger than the second-to-last value
+				// reset the noImprovementCount
+				// otherwise, increment it by 1.
+				// if noImprovementCount exceeds a preset value the while() is
+				// broken
+				final int i = volumeHistory.size() - 1;
+				if (volumeHistory.get(i) > volumeHistory.get(i - 1))
+					noImprovementCount = 0;
+				else
+					noImprovementCount++;
+
+				totalIterations++;
 			}
-
-			if (ellipsoid.getVolume() > maximal.getVolume())
-				maximal = ellipsoid.copy();
-
-			// rotate a little bit
-			ellipsoid = turn(ellipsoid, contactPoints, 0.1, pixels, pW, pH, pD,
-					w, h, d);
-
-			// contract until no contact
-			ellipsoid = shrinkToFit(ellipsoid, contactPoints, pixels, pW, pH,
-					pD, w, h, d);
-
-			// dilate an axis
-			abc = threeWayShuffle();
-			ellipsoid = inflateToFit(ellipsoid, contactPoints, abc[0], abc[1],
-					abc[2], pixels, pW, pH, pD, w, h, d, px, py, pz);
-
-			if (isInvalid(ellipsoid, contactPoints)) {
-				IJ.log("Ellipsoid at (" + px + ", " + py + ", " + pz
-						+ ") is invalid, nullifying after " + totalIterations
-						+ " iterations");
-				return null;
-			}
-
-			if (ellipsoid.getVolume() > maximal.getVolume())
-				maximal = ellipsoid.copy();
-
-			// keep the maximal ellipsoid found
-			ellipsoid = maximal.copy();
-			// log its volume
-			volumeHistory.add(ellipsoid.getVolume());
-
-			// if the last value is bigger than the second-to-last value
-			// reset the noImprovementCount
-			// otherwise, increment it by 1.
-			// if noImprovementCount exceeds a preset value the while() is
-			// broken
-			final int i = volumeHistory.size() - 1;
-			if (volumeHistory.get(i) > volumeHistory.get(i - 1))
-				noImprovementCount = 0;
-			else
-				noImprovementCount++;
-
-			totalIterations++;
-		}}catch (NullPointerException npe){
+		} catch (NullPointerException npe) {
 			IJ.log("Ellipsoid at (" + px + ", " + py + ", " + pz
 					+ ") is invalid, nullifying after " + totalIterations
 					+ " iterations");
@@ -1532,7 +1532,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		// contract until no contact
 		int safety = 0;
 		while (contactPoints.size() > 0 && safety <= maxIterations) {
-			ellipsoid.scale(0.99);
+			ellipsoid.scale(0.97);
 			contactPoints = findContactPoints(ellipsoid, contactPoints,
 					unitVectors, pixels, pW, pH, pD, w, h, d);
 			safety++;
