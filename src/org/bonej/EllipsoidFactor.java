@@ -109,6 +109,9 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 	private ResultsTable debugLog, criticalPoints;
 
+	/** longest distance between adjacent 26-neighbourhood pixels */
+	private double pixelDiagonal = Math.sqrt(3);
+
 	// private ResultsTable ellipseScanLog;
 
 	public void run(String arg) {
@@ -131,7 +134,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		final double pH = cal.pixelHeight;
 		final double pD = cal.pixelDepth;
 		vectorIncrement *= Math.sqrt(3) * Math.min(pD, Math.min(pH, pW));
-		maxDrift = Math.sqrt(pW * pW + pH * pH + pD * pD);
+		pixelDiagonal = Math.sqrt(pW * pW + pH * pH + pD * pD);
+		maxDrift = pixelDiagonal;
 		stackVolume = pW * pH * pD * imp.getWidth() * imp.getHeight()
 				* imp.getStackSize();
 		GenericDialog gd = new GenericDialog("Setup");
@@ -1515,30 +1519,24 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			ArrayList<double[]> contactPoints, byte[][] pixels, double pW,
 			double pH, double pD, int w, int h, int d) {
 
-		// get the contact points
-		// contactPoints = findContactPoints(ellipsoid, contactPoints, pixels,
-		// pW,
-		// pH, pD, w, h, d);
-		contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH, pD,
-				w, h, d);
+		final int nPoints = contactPoints.size();
 
-		if (contactPoints == null)
-			return null;
+		double[] centre = ellipsoid.getCentre();
+		final double cx = centre[0];
+		final double cy = centre[1];
+		final double cz = centre[2];
 
-		// get the unit vectors to the contact points
-		double[][] unitVectors = findContactUnitVectors(ellipsoid,
-				contactPoints);
+		double minContactLength = Double.MAX_VALUE;
 
-		// contract until no contact
-		int safety = 0;
-		while (contactPoints.size() > 0 && safety <= maxIterations) {
-			ellipsoid.scale(0.97);
-			contactPoints = findContactPoints(ellipsoid, contactPoints,
-					unitVectors, pixels, pW, pH, pD, w, h, d);
-			safety++;
+		for (int i = 0; i < nPoints; i++) {
+			double[] p = contactPoints.get(i);
+			final double l = Trig.distance3D(p[0], p[1], p[2], cx, cy, cz);
+			minContactLength = Math.min(minContactLength, l);
 		}
 
-		ellipsoid.scale(0.95);
+		double f = Math.max(1 - pixelDiagonal / minContactLength, 0.25);
+		
+		ellipsoid.scale(f);
 
 		return ellipsoid;
 	}
