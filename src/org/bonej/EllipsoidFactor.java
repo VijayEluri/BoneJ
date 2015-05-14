@@ -1541,31 +1541,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		return ellipsoid;
 	}
 
-	private double[][] findContactUnitVectors(Ellipsoid ellipsoid,
-			ArrayList<double[]> contactPoints) {
-		double[][] unitVectors = new double[contactPoints.size()][3];
-		final double[] c = ellipsoid.getCentre();
-		final double cx = c[0];
-		final double cy = c[1];
-		final double cz = c[2];
-
-		double[] p = new double[3];
-		for (int i = 0; i < contactPoints.size(); i++) {
-			p = contactPoints.get(i);
-			final double pxcx = p[0] - cx;
-			final double pycy = p[1] - cy;
-			final double pzcz = p[2] - cz;
-
-			final double l = Trig.distance3D(pxcx, pycy, pzcz);
-			final double x = pxcx / l;
-			final double y = pycy / l;
-			final double z = pzcz / l;
-			double[] u = { x, y, z };
-			unitVectors[i] = u;
-		}
-		return unitVectors;
-	}
-
 	/**
 	 * 
 	 * @param ellipsoid
@@ -1690,77 +1665,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 	 */
 	private double nudge(double a) {
 		return Math.random() * (a + a) - a;
-	}
-
-	// private ArrayList<double[]> findContactPoints(Ellipsoid ellipsoid,
-	// ArrayList<double[]> contactPoints, byte[][] pixels,
-	// final double pW, final double pH, final double pD, final int w,
-	// final int h, final int d) {
-	// final double[][] unitVectors = Vectors.regularVectors(nVectors);
-	// return findContactPoints(ellipsoid, contactPoints, unitVectors, pixels,
-	// pW, pH, pD, w, h, d);
-	// }
-
-	private ArrayList<double[]> findContactPoints(Ellipsoid ellipsoid,
-			ArrayList<double[]> contactPoints, double[][] unitVectors,
-			byte[][] pixels, double pW, double pH, double pD, int w, int h,
-			int d) {
-		contactPoints.clear();
-		double[][] points = ellipsoid.getSurfacePoints(unitVectors);
-		final int nPoints = points.length;
-		double[] p = new double[3];
-		for (int i = 0; i < nPoints; i++) {
-			p = points[i];
-			final int x = (int) Math.floor(p[0] / pW);
-			final int y = (int) Math.floor(p[1] / pH);
-			final int z = (int) Math.floor(p[2] / pD);
-			if (isOutOfBounds(x, y, z, w, h, d))
-				continue;
-			if (pixels[z][y * w + x] != -1)
-				contactPoints.add(p);
-		}
-		return contactPoints;
-	}
-
-	/**
-	 * Return the 6 variables a - g of the standard ellipse formed by the
-	 * intersection of an ellipsoid and the xy plane at z, found simply by
-	 * substituting the value for z into the ellipsoid equation. Does not check
-	 * if the plane intersects the ellipsoid: use Ellipsoid.getZMinAndMax()
-	 * prior to calling this method.
-	 * 
-	 * <p>
-	 * <i>ax</i><sup>2</sup> + 2<i>bxy</i> + <i>cy</i><sup>2</sup> + 2<i>dx</i>
-	 * + 2<i>fy</i> + <i>g</i> = 0
-	 * </p>
-	 * 
-	 * @param e
-	 *            Ellipsoid equation variables
-	 * @param z
-	 *            position of xy plane
-	 * @return 6 element double with variables in order a, b, c, d, f, g.
-	 */
-	private double[] getEllipseAtZ(double[] e, double z) {
-		final double ea = e[0];
-		final double eb = e[1];
-		final double ec = e[2];
-		final double ed = e[3];
-		final double ef = e[4];
-		final double eg = e[5];
-		final double eh = e[6];
-		final double ej = e[7];
-		final double ek = e[8];
-
-		double a = ea;
-		double b = ed;
-		double c = eb;
-		double d = z * ef + eh;
-		double f = z * eg + ej;
-		double g = z * (2 * ek + ec * z) - 1;
-
-		double[] ellipse = { a, b, c, d, f, g };
-
-		return ellipse;
 	}
 
 	private ArrayList<double[]> findEllipseContactPoints(Ellipsoid ellipsoid,
@@ -2154,24 +2058,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		// return false;
 		// }
 		return true;
-	}
-
-	/**
-	 * return true if 3D pixel coordinate is out of image bounds
-	 * 
-	 * @param x
-	 * @param y
-	 * @param z
-	 * @param w
-	 * @param h
-	 * @param d
-	 * @return
-	 */
-	private boolean isOutOfBounds(int x, int y, int z, int w, int h, int d) {
-		if (x < 0 || x >= w || y < 0 || y >= h || z < 0 || z >= d)
-			return true;
-		else
-			return false;
 	}
 
 	/**
