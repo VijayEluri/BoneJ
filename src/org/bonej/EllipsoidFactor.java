@@ -968,6 +968,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		int totalIterations = 0;
 		int noImprovementCount = 0;
 		final int absoluteMaxIterations = maxIterations * 10;
+		
+		try{
 		while (totalIterations < absoluteMaxIterations
 				&& noImprovementCount < maxIterations) {
 
@@ -1064,6 +1066,11 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 				noImprovementCount++;
 
 			totalIterations++;
+		}}catch (NullPointerException npe){
+			IJ.log("Ellipsoid at (" + px + ", " + py + ", " + pz
+					+ ") is invalid, nullifying after " + totalIterations
+					+ " iterations");
+			return null;
 		}
 
 		// this usually indicates that the ellipsoid
@@ -1524,19 +1531,14 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 		// contract until no contact
 		int safety = 0;
-		while (contactPoints.size() > 0 && safety < maxIterations) {
-			ellipsoid.contract(0.01);
+		while (contactPoints.size() > 0 && safety <= maxIterations) {
+			ellipsoid.scale(0.99);
 			contactPoints = findContactPoints(ellipsoid, contactPoints,
 					unitVectors, pixels, pW, pH, pD, w, h, d);
-			// contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW,
-			// pH,
-			// pD, w, h, d);
-			// if (contactPoints == null)
-			// return null;
 			safety++;
 		}
 
-		ellipsoid.contract(0.05);
+		ellipsoid.scale(0.95);
 
 		return ellipsoid;
 	}
