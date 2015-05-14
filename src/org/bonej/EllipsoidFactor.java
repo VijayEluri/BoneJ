@@ -1317,8 +1317,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		// pW,
 		// pH, pD, w, h, d);
 
-//		contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH, pD,
-//				w, h, d);
+		contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH, pD,
+				w, h, d);
 
 		if (contactPoints == null)
 			return null;
@@ -1491,8 +1491,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		// contactPoints = findContactPoints(ellipsoid, contactPoints, pixels,
 		// pW,
 		// pH, pD, w, h, d);
-//		contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH, pD,
-//				w, h, d);
+		contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH, pD,
+				w, h, d);
 
 		if (contactPoints == null)
 			return null;
