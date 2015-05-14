@@ -131,7 +131,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		final double pW = cal.pixelWidth;
 		final double pH = cal.pixelHeight;
 		final double pD = cal.pixelDepth;
-		vectorIncrement *= Math.min(pD, Math.min(pH, pW));
+		vectorIncrement *= Math.sqrt(3) * Math.min(pD, Math.min(pH, pW));
 		maxDrift = Math.sqrt(pW * pW + pH * pH + pD * pD);
 		stackVolume = pW * pH * pD * imp.getWidth() * imp.getHeight()
 				* imp.getStackSize();
