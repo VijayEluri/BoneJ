@@ -914,7 +914,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 		// find the mean unit vector pointing to the points of contact from the
 		// centre
-		double[] shortAxis = contactPointUnitVector(ellipsoid, contactPoints);
+		double[] shortAxis = contactPointsMeanUnitVector(ellipsoid,
+				contactPoints);
 
 		// find an orthogonal axis
 		final double[] xAxis = { 1, 0, 0 };
@@ -1338,27 +1339,46 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 	 * @param contactPoints
 	 * @return
 	 */
-	private double[] contactPointUnitVector(Ellipsoid ellipsoid,
+	private double[] contactPointsMeanUnitVector(Ellipsoid ellipsoid,
 			ArrayList<double[]> contactPoints) {
-		if (contactPoints.size() < 1)
+
+		final int nPoints = contactPoints.size();
+
+		if (nPoints < 1)
 			throw new IllegalArgumentException(
 					"Need at least one contact point");
-		double[] summedVector = new double[3];
-		final double[] c = ellipsoid.getCentre();
-		for (double[] p : contactPoints) {
-			final double l = Trig.distance3D(p, c);
-			double[] unitVector = { (p[0] - c[0]) / l, (p[1] - c[1]) / l,
-					(p[2] - c[2]) / l };
-			summedVector[0] += unitVector[0];
-			summedVector[1] += unitVector[1];
-			summedVector[2] += unitVector[2];
-		}
-		double[] unitVector = new double[3];
-		unitVector[0] = summedVector[0] / contactPoints.size();
-		unitVector[1] = summedVector[1] / contactPoints.size();
-		unitVector[2] = summedVector[2] / contactPoints.size();
 
-		unitVector = Vectors.norm(unitVector);
+		double xSum = 0;
+		double ySum = 0;
+		double zSum = 0;
+
+		final double[] c = ellipsoid.getCentre();
+		final double cx = c[0];
+		final double cy = c[1];
+		final double cz = c[2];
+
+		double[] p = new double[3];
+		for (int i = 0; i < nPoints; i++) {
+			p = contactPoints.get(i);
+
+			final double pxcx = p[0] - cx;
+			final double pycy = p[1] - cy;
+			final double pzcz = p[2] - cz;
+
+			final double l = Trig.distance3D(pxcx, pycy, pzcz);
+
+			xSum += pxcx / l;
+			ySum += pycy / l;
+			zSum += pzcz / l;
+		}
+
+		final double xMean = xSum / nPoints;
+		final double yMean = ySum / nPoints;
+		final double zMean = zSum / nPoints;
+
+		final double l = Trig.distance3D(xMean, yMean, zMean);
+
+		double[] unitVector = { xMean / l, yMean / l, zMean / l };
 		return unitVector;
 	}
 
@@ -1613,7 +1633,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		final double displacement = vectorIncrement / 2;
 
 		final double[] c = ellipsoid.getCentre();
-		final double[] vector = contactPointUnitVector(ellipsoid, contactPoints);
+		final double[] vector = contactPointsMeanUnitVector(ellipsoid,
+				contactPoints);
 		final double x = c[0] + vector[0] * displacement;
 		final double y = c[1] + vector[1] * displacement;
 		final double z = c[2] + vector[2] * displacement;
@@ -1669,14 +1690,14 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		return Math.random() * (a + a) - a;
 	}
 
-//	private ArrayList<double[]> findContactPoints(Ellipsoid ellipsoid,
-//			ArrayList<double[]> contactPoints, byte[][] pixels,
-//			final double pW, final double pH, final double pD, final int w,
-//			final int h, final int d) {
-//		final double[][] unitVectors = Vectors.regularVectors(nVectors);
-//		return findContactPoints(ellipsoid, contactPoints, unitVectors, pixels,
-//				pW, pH, pD, w, h, d);
-//	}
+	// private ArrayList<double[]> findContactPoints(Ellipsoid ellipsoid,
+	// ArrayList<double[]> contactPoints, byte[][] pixels,
+	// final double pW, final double pH, final double pD, final int w,
+	// final int h, final int d) {
+	// final double[][] unitVectors = Vectors.regularVectors(nVectors);
+	// return findContactPoints(ellipsoid, contactPoints, unitVectors, pixels,
+	// pW, pH, pD, w, h, d);
+	// }
 
 	private ArrayList<double[]> findContactPoints(Ellipsoid ellipsoid,
 			ArrayList<double[]> contactPoints, double[][] unitVectors,
@@ -2023,7 +2044,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 
 		if (nPoints == 0)
 			return contactPoints;
-		
+
 		if (nOOBPoints / nPoints > 0.5)
 			return null;
 
