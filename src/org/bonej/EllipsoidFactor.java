@@ -133,7 +133,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		final double pW = cal.pixelWidth;
 		final double pH = cal.pixelHeight;
 		final double pD = cal.pixelDepth;
-		vectorIncrement *= Math.sqrt(3) * Math.min(pD, Math.min(pH, pW));
+		vectorIncrement *= Math.min(pD, Math.min(pH, pW));
 		pixelDiagonal = Math.sqrt(pW * pW + pH * pH + pD * pD);
 		maxDrift = pixelDiagonal;
 		stackVolume = pW * pH * pD * imp.getWidth() * imp.getHeight()
@@ -1330,8 +1330,8 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		// pW,
 		// pH, pD, w, h, d);
 
-//		contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH, pD,
-//				w, h, d);
+		contactPoints = findEllipseContactPoints(ellipsoid, pixels, pW, pH, pD,
+				w, h, d);
 
 //		if (contactPoints == null)
 //			return null;
@@ -1534,7 +1534,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 			minContactLength = Math.min(minContactLength, l);
 		}
 
-		double f = Math.max(1 - pixelDiagonal / minContactLength, 0.25);
+		double f = Math.max((1 - 2 * pixelDiagonal / minContactLength), 0.25);
 		
 		ellipsoid.scale(f);
 
