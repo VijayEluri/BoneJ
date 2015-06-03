@@ -1418,7 +1418,7 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		final double u = 2 / (c * c);
 
 		final double[][] rot = ellipsoid.getRotation();
-		final double[][] inv = inv(rot);
+		final double[][] inv = Vectors.inv3(rot);
 
 		double t0 = 0;
 		double t1 = 0;
@@ -2119,49 +2119,6 @@ public class EllipsoidFactor implements PlugIn, Comparator<Ellipsoid> {
 		int[][] skeletonPoints = list.toArray(new int[list.size()][]);
 
 		return skeletonPoints;
-	}
-
-	/**
-	 * <p>
-	 * Calculate the matrix inverse A<sup>-1</sup> of a 3x3 matrix A
-	 * </p>
-	 * 
-	 * @param a
-	 *            3x3 matrix
-	 * @return inverse of the 3x3 matrix
-	 * @see http://mathworld.wolfram.com/MatrixInverse.html
-	 * @see http://mathworld.wolfram.com/Determinant.html
-	 */
-	private double[][] inv(double[][] a) {
-		final double a00 = a[0][0];
-		final double a01 = a[0][1];
-		final double a02 = a[0][2];
-		final double a10 = a[1][0];
-		final double a11 = a[1][1];
-		final double a12 = a[1][2];
-		final double a20 = a[2][0];
-		final double a21 = a[2][1];
-		final double a22 = a[2][2];
-
-		// calculate the inverse of the determinant of a
-		final double invDetA = 1 / (a00 * a11 * a22 - a00 * a12 * a21 - a01
-				* a10 * a22 + a01 * a12 * a20 + a02 * a10 * a21 - a02 * a11
-				* a20);
-
-		// calculate square 2x2 determinants
-		double[][] b = new double[3][3];
-		
-		b[0][0] = (a11 * a22 - a12 * a21) * invDetA;
-		b[0][1] = (a02 * a21 - a01 * a22) * invDetA;
-		b[0][2] = (a01 * a12 - a02 * a11) * invDetA;
-		b[1][0] = (a12 * a20 - a10 * a22) * invDetA;
-		b[1][1] = (a00 * a22 - a02 * a20) * invDetA;
-		b[1][2] = (a02 * a10 - a00 * a12) * invDetA;
-		b[2][0] = (a10 * a21 - a11 * a20) * invDetA;
-		b[2][1] = (a01 * a20 - a00 * a21) * invDetA;
-		b[2][2] = (a00 * a11 - a01 * a10) * invDetA;
-
-		return b;
 	}
 
 	/**
